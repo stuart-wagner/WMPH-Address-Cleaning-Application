@@ -572,55 +572,73 @@ class DataJoinerApp:
         export_csv_btn.pack(side="left", padx=10, pady=10)
         
     def load_dataset(self):
-        file_path = filedialog.askopenfilename(
-            title="Select Dataset",
+        file_paths = filedialog.askopenfilenames(
+            title="Select Dataset(s)",
             filetypes=[
+                ("All Supported Files", "*.xlsx *.xls *.csv"),
                 ("Excel files", "*.xlsx *.xls"),
                 ("CSV files", "*.csv"),
                 ("All files", "*.*")
             ]
         )
         
-        if file_path:
-            try:
-                # Read the file
-                if file_path.endswith(('.xlsx', '.xls')):
-                    # Try to read Excel file, handling multiple sheets
-                    excel_file = pd.ExcelFile(file_path)
-                    if len(excel_file.sheet_names) > 1:
-                        # Show sheet selection dialog
-                        sheet_name = self.select_sheet(excel_file.sheet_names)
-                        if sheet_name is None:
-                            return
+        if file_paths:
+            loaded_count = 0
+            error_count = 0
+            error_messages = []
+            
+            for file_path in file_paths:
+                try:
+                    # Read the file
+                    if file_path.endswith(('.xlsx', '.xls')):
+                        # Try to read Excel file, handling multiple sheets
+                        excel_file = pd.ExcelFile(file_path)
+                        if len(excel_file.sheet_names) > 1:
+                            # Show sheet selection dialog
+                            sheet_name = self.select_sheet(excel_file.sheet_names)
+                            if sheet_name is None:
+                                continue  # Skip this file if no sheet selected
+                        else:
+                            sheet_name = excel_file.sheet_names[0]
+                        
+                        df = pd.read_excel(file_path, sheet_name=sheet_name)
                     else:
-                        sheet_name = excel_file.sheet_names[0]
+                        df = pd.read_csv(file_path)
                     
-                    df = pd.read_excel(file_path, sheet_name=sheet_name)
-                else:
-                    df = pd.read_csv(file_path)
-                
-                # Try to detect and skip dummy rows
-                df = self.detect_and_skip_dummy_rows(df)
-                
-                # Generate unique dataset name
-                base_name = os.path.splitext(os.path.basename(file_path))[0]
-                counter = 1
-                dataset_name = base_name
-                while dataset_name in self.datasets:
-                    dataset_name = f"{base_name}_{counter}"
-                    counter += 1
-                
-                # Store dataset
-                self.datasets[dataset_name] = df
-                
-                # Update UI
-                self.update_dataset_list()
-                self.update_dataset_selector()
-                
-                messagebox.showinfo("Success", f"Dataset '{dataset_name}' loaded successfully!")
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load dataset: {str(e)}")
+                    # Try to detect and skip dummy rows
+                    df = self.detect_and_skip_dummy_rows(df)
+                    
+                    # Generate unique dataset name
+                    base_name = os.path.splitext(os.path.basename(file_path))[0]
+                    counter = 1
+                    dataset_name = base_name
+                    while dataset_name in self.datasets:
+                        dataset_name = f"{base_name}_{counter}"
+                        counter += 1
+                    
+                    # Store dataset
+                    self.datasets[dataset_name] = df
+                    loaded_count += 1
+                    
+                except Exception as e:
+                    error_count += 1
+                    error_messages.append(f"Failed to load {os.path.basename(file_path)}: {str(e)}")
+            
+            # Update UI after all files are processed
+            self.update_dataset_list()
+            self.update_dataset_selector()
+            
+            # Show summary message
+            if loaded_count > 0:
+                success_msg = f"Successfully loaded {loaded_count} dataset{'s' if loaded_count != 1 else ''}"
+                if error_count > 0:
+                    success_msg += f"\n\nWarning: {error_count} file{'s' if error_count != 1 else ''} failed to load:"
+                    success_msg += "\n" + "\n".join(error_messages)
+                messagebox.showinfo("Import Complete", success_msg)
+            elif error_count > 0:
+                error_msg = f"Failed to load {error_count} file{'s' if error_count != 1 else ''}:\n\n"
+                error_msg += "\n".join(error_messages)
+                messagebox.showerror("Import Failed", error_msg)
     
     def select_sheet(self, sheet_names):
         # Create a simple dialog to select sheet
