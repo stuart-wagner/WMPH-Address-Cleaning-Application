@@ -1039,13 +1039,17 @@ class DataJoinerApp:
     
     def clean_address_data(self):
         """Clean address data and create apartment indicator"""
-        if self.combined_data is None:
+        if not self.datasets_joined or self.combined_data is None:
             messagebox.showwarning("Warning", "Please join datasets first!")
             return
         
         address_column = self.address_column_selector.get()
         if not address_column:
             messagebox.showwarning("Warning", "Please select an address column!")
+            return
+            
+        if not address_column in self.combined_data.columns:
+            messagebox.showerror("Error", f"Column '{address_column}' not found in combined data!")
             return
         
         if self.combined_data.columns.empty or address_column not in self.combined_data.columns:
@@ -1056,8 +1060,26 @@ class DataJoinerApp:
             # Store original data before cleaning
             self.pre_cleaned_data = self.combined_data.copy()
             
-            # Perform the cleaning
-            self.cleaned_data = self.clean_address_column(self.combined_data[address_column])
+            # Create a copy of the combined data
+            self.cleaned_data = self.combined_data.copy()
+            
+            print(f"Processing {len(self.cleaned_data)} rows from combined data...")  # Debug print
+            
+            # Clean the address column and get results
+            results = self.clean_address_column(self.cleaned_data[address_column])
+            cleaned_addresses = results[0]
+            apartment_indicators = results[1]
+            
+            # Verify the lengths match
+            if len(cleaned_addresses) != len(self.cleaned_data) or len(apartment_indicators) != len(self.cleaned_data):
+                raise ValueError(f"Mismatch in processed data lengths: {len(cleaned_addresses)} addresses, {len(apartment_indicators)} indicators, {len(self.cleaned_data)} original rows")
+            
+            # Add new columns
+            new_address_name = f"new_{address_column}"
+            self.cleaned_data[new_address_name] = cleaned_addresses
+            self.cleaned_data[f"{address_column}_apartment_indicator"] = apartment_indicators
+            
+            print(f"Processed {len(self.cleaned_data)} rows successfully")  # Debug print
             
             # Set cleaning status
             self.address_cleaning_done = True
@@ -1065,10 +1087,7 @@ class DataJoinerApp:
             # Update the preview
             self.display_dataframe_in_tree(self.clean_tree, self.cleaned_data)
             
-            # Enable next step
-            self.additional_dataset_btn.configure(state="normal")
-            
-            messagebox.showinfo("Success", "Address cleaning completed successfully!")
+            messagebox.showinfo("Success", f"Address cleaning completed successfully!\nProcessed {len(self.cleaned_data)} rows.")
             
         except Exception as e:
             self.address_cleaning_done = False
@@ -1081,15 +1100,15 @@ class DataJoinerApp:
             # Create a copy of the combined data
             self.cleaned_data = self.combined_data.copy()
             
-            # Clean the address column
-            cleaned_address, apartment_indicator = self.clean_address_column(
-                self.cleaned_data[address_column]
-            )
+            # Clean the address column and get results
+            results = self.clean_address_column(self.cleaned_data[address_column])
+            cleaned_addresses = results[0]
+            apartment_indicators = results[1]
             
             # Add new columns
             new_address_name = f"new_{address_column}"
-            self.cleaned_data[new_address_name] = cleaned_address
-            self.cleaned_data[f"{address_column}_apartment_indicator"] = apartment_indicator
+            self.cleaned_data[new_address_name] = cleaned_addresses
+            self.cleaned_data[f"{address_column}_apartment_indicator"] = apartment_indicators
             
             # Display preview
             self.display_dataframe_in_tree(self.clean_tree, self.cleaned_data)
