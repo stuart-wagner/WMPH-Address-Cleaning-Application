@@ -4,7 +4,6 @@
     "APARTMENT",
     "UNIT",
     "U",
-    "LAPTOP",
     "LOT",
     "SUITE",
     "STE",
@@ -13,9 +12,7 @@
     "FLOOR",
     "FL",
     "ROOM",
-    "RM",
-    "ST",
-    "GROCERIES"
+    "RM"
   ],
   "po_box_words": [
     "PO BOX",

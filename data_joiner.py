@@ -18,6 +18,13 @@ class DataJoinerApp:
         self.root.title("WMCHD Client-Services Data Cleaner - Joining and Address Cleaning")
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
+
+        # Set window icon
+        try:
+            # Assuming the icon file is named 'app_icon.ico' and is in the same directory
+            self.root.iconbitmap('wmcphd logo.ico')
+        except Exception as e:
+            print(f"Warning: Could not load application icon. {e}")
         
         # Initialize review tab variables
         self.current_preview_dataset = None
@@ -30,15 +37,18 @@ class DataJoinerApp:
         self.cleaned_data = None
         self.final_data = None
         self.additional_dataset = None
+        self.summarized_additional_data = None
         
         # Status tracking
         self.datasets_joined = False
         self.address_cleaning_done = False
+        self.additional_data_summarized = False
         self.additional_join_done = False
         
         # Backup storage for reverting changes
         self.pre_cleaned_data = None
         self.pre_additional_join_data = None
+        self.pre_summarized_data = None
         
         # Settings for address cleaning
         self.settings_file = "settings.json"
@@ -116,16 +126,20 @@ class DataJoinerApp:
         self.create_clean_tab()
         
         
-        # Step 5: Additional Dataset Tab
+        # Step 5: Load Additional Dataset Tab
         self.additional_tab = self.notebook.add("5. Additional Dataset")
         self.create_additional_tab()
         
-        # Step 6: Final Review Tab
-        self.final_tab = self.notebook.add("6. Final Review")
+        # Step 6: Summarize Data Tab
+        self.summarize_tab = self.notebook.add("6. Summarize Data")
+        self.create_summarize_tab()
+        
+        # Step 7: Final Review Tab
+        self.final_tab = self.notebook.add("7. Left Join")
         self.create_final_tab()
         
-        # Step 7: Export Tab
-        self.export_tab = self.notebook.add("7. Export")
+        # Step 8: Export Tab
+        self.export_tab = self.notebook.add("8. Export")
         self.create_export_tab()
         
         # Settings button
@@ -146,7 +160,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             load_frame,
-            text="Step 1: Load your datasets and assign time period/service information\n• Load Excel or CSV files\n• Add time period and service for each dataset\n• Review and adjust column names if needed",
+            text="Step 1: Load datasets and assign time period & service information",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -186,18 +200,27 @@ class DataJoinerApp:
         self.info_frame.pack(fill="x", pady=10)
         
         # Time period input
-        time_label = ctk.CTkLabel(self.info_frame, text="Time Period:", font=ctk.CTkFont(size=12, weight="bold"))
-        time_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        month_label = ctk.CTkLabel(self.info_frame, text="Month:", font=ctk.CTkFont(size=12, weight="bold"))
+        month_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
         
-        self.time_entry = ctk.CTkEntry(self.info_frame, placeholder_text="e.g., 2023 Q1, Jan-Mar 2023", width=200)
-        self.time_entry.grid(row=0, column=1, padx=10, pady=10)
+        months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "NA"]
+        self.time_selector = ctk.CTkComboBox(self.info_frame, values=months, width=200)
+        self.time_selector.set("NA") # Set default value
+        self.time_selector.grid(row=0, column=1, padx=10, pady=10)
         
+        # Year input
+        year_label = ctk.CTkLabel(self.info_frame, text="Year:", font=ctk.CTkFont(size=12, weight="bold"))
+        year_label.grid(row=0, column=2, padx=10, pady=10, sticky="w")
+
+        self.year_entry = ctk.CTkEntry(self.info_frame, placeholder_text="e.g., 2023", width=100)
+        self.year_entry.grid(row=0, column=3, padx=10, pady=10)
+
         # Service input
         service_label = ctk.CTkLabel(self.info_frame, text="Service:", font=ctk.CTkFont(size=12, weight="bold"))
-        service_label.grid(row=0, column=2, padx=10, pady=10, sticky="w")
+        service_label.grid(row=0, column=4, padx=10, pady=10, sticky="w")
         
         self.service_entry = ctk.CTkEntry(self.info_frame, placeholder_text="e.g., Customer Support, Sales", width=200)
-        self.service_entry.grid(row=0, column=3, padx=10, pady=10)
+        self.service_entry.grid(row=0, column=5, padx=10, pady=10)
         
         # Add info button
         add_info_btn = ctk.CTkButton(
@@ -206,7 +229,7 @@ class DataJoinerApp:
             command=self.add_dataset_info,
             width=100
         )
-        add_info_btn.grid(row=0, column=4, padx=10, pady=10)
+        add_info_btn.grid(row=0, column=6, padx=10, pady=10)
         
         # Remove dataset button
         remove_btn = ctk.CTkButton(
@@ -226,7 +249,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             join_frame,
-            text="Step 2: Join datasets and preview the combined result\n• All datasets will be stacked together\n• Time period and service information will be added\n• Review the combined dataset before proceeding",
+            text="Step 3: Join datasets and preview the combined result\n• All datasets will be stacked together\n• Time period and service information will be added\n• Review the combined dataset before proceeding",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -284,7 +307,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             clean_frame,
-            text="Step 3: Clean address data\n• Select the address column to clean\n• Remove apartment/unit information\n• Create indicator for potential apartment entries",
+            text="Step 4: Clean address data\n• High-confidence words (e.g., 'APT', 'UNIT') are auto-cleaned.\n• Ambiguous patterns (e.g., '#', 'PO BOX') are flagged for review.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -339,7 +362,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             additional_frame,
-            text="Step 5: Load additional dataset for left join\n• Load a new dataset to join with cleaned data\n• Select join variables\n• Preview the merged result",
+            text="Step 5: Load an additional dataset to enrich your data.\n• This dataset will be summarized in the next step before joining.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -355,33 +378,11 @@ class DataJoinerApp:
         )
         load_additional_btn.pack(pady=10)
         
-        # Join variables selection
-        join_vars_frame = ctk.CTkFrame(additional_frame)
-        join_vars_frame.pack(fill="x", pady=10)
-        
-        ctk.CTkLabel(join_vars_frame, text="Cleaned Data Column:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
-        self.cleaned_join_column = ctk.CTkComboBox(join_vars_frame, values=[])
-        self.cleaned_join_column.pack(side="left", padx=10, pady=10)
-        
-        ctk.CTkLabel(join_vars_frame, text="Additional Data Column:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
-        self.additional_join_column = ctk.CTkComboBox(join_vars_frame, values=[])
-        self.additional_join_column.pack(side="left", padx=10, pady=10)
-        
-        # Join button
-        join_additional_btn = ctk.CTkButton(
-            additional_frame,
-            text="Join Datasets",
-            command=self.join_additional_dataset,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        join_additional_btn.pack(pady=10)
-        
-        # Results preview
+        # Data preview
         self.additional_preview_frame = ctk.CTkFrame(additional_frame)
         self.additional_preview_frame.pack(fill="both", expand=True, pady=10)
         
-        # Create treeview for merged data preview
+        # Create treeview for additional data preview
         self.additional_tree_frame = ctk.CTkFrame(self.additional_preview_frame)
         self.additional_tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
@@ -399,6 +400,44 @@ class DataJoinerApp:
         self.additional_tree_scroll_y.config(command=self.additional_tree.yview)
         self.additional_tree_scroll_x.config(command=self.additional_tree.xview)
     
+    def create_summarize_tab(self):
+        """Create the summarize additional data tab"""
+        summarize_frame = ctk.CTkFrame(self.summarize_tab)
+        summarize_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        instructions = ctk.CTkLabel(
+            summarize_frame,
+            text="Step 6: Summarize the additional dataset by a selected column.\n• This creates a count of unique values in that column.",
+            font=ctk.CTkFont(size=12),
+            justify="left"
+        )
+        instructions.pack(pady=(20, 10))
+
+        # Column selection
+        column_frame = ctk.CTkFrame(summarize_frame)
+        column_frame.pack(fill="x", pady=10)
+        ctk.CTkLabel(column_frame, text="Select Column to Summarize By:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
+        self.summarize_column_selector = ctk.CTkComboBox(column_frame, values=[])
+        self.summarize_column_selector.pack(side="left", padx=10, pady=10)
+
+        # Summarize button
+        summarize_btn = ctk.CTkButton(summarize_frame, text="Summarize Data", command=self.summarize_additional_data_action, height=40, font=ctk.CTkFont(size=14, weight="bold"))
+        summarize_btn.pack(pady=10)
+
+        # Results preview
+        self.summarize_preview_frame = ctk.CTkFrame(summarize_frame)
+        self.summarize_preview_frame.pack(fill="both", expand=True, pady=10)
+        self.summarize_tree_frame = ctk.CTkFrame(self.summarize_preview_frame)
+        self.summarize_tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.summarize_tree_scroll_y = tk.Scrollbar(self.summarize_tree_frame)
+        self.summarize_tree_scroll_y.pack(side="right", fill="y")
+        self.summarize_tree_scroll_x = tk.Scrollbar(self.summarize_tree_frame, orient="horizontal")
+        self.summarize_tree_scroll_x.pack(side="bottom", fill="x")
+        self.summarize_tree = ttk.Treeview(self.summarize_tree_frame, yscrollcommand=self.summarize_tree_scroll_y.set, xscrollcommand=self.summarize_tree_scroll_x.set)
+        self.summarize_tree.pack(side="left", fill="both", expand=True)
+        self.summarize_tree_scroll_y.config(command=self.summarize_tree.yview)
+        self.summarize_tree_scroll_x.config(command=self.summarize_tree.xview)
+
     def create_final_tab(self):
         """Create the final review tab"""
         final_frame = ctk.CTkFrame(self.final_tab)
@@ -407,11 +446,33 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             final_frame,
-            text="Step 6: Review final merged dataset\n• Check the complete dataset with all joins\n• Verify data quality and completeness\n• Proceed to export when ready",
+            text="Step 7: Join the cleaned data with the summarized additional data.\n• This performs a left join, keeping all rows from your main dataset.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
         instructions.pack(pady=(20, 10))
+        
+        # Join variables selection
+        join_vars_frame = ctk.CTkFrame(final_frame)
+        join_vars_frame.pack(fill="x", pady=10)
+        
+        ctk.CTkLabel(join_vars_frame, text="Cleaned Data Column:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
+        self.cleaned_join_column = ctk.CTkComboBox(join_vars_frame, values=[])
+        self.cleaned_join_column.pack(side="left", padx=10, pady=10)
+        
+        ctk.CTkLabel(join_vars_frame, text="Additional Data Column:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
+        self.additional_join_column = ctk.CTkComboBox(join_vars_frame, values=[])
+        self.additional_join_column.pack(side="left", padx=10, pady=10)
+        
+        # Join button
+        join_additional_btn = ctk.CTkButton(
+            final_frame,
+            text="Join Datasets",
+            command=self.join_additional_dataset,
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        join_additional_btn.pack(pady=10)
         
         # Refresh button
         refresh_btn = ctk.CTkButton(
@@ -520,7 +581,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             export_frame,
-            text="Step 7: Export final dataset\n• Export the complete merged dataset\n• Choose between Excel or CSV format\n• Save your processed data",
+            text="Step 8: Export final dataset\n• Export the complete merged dataset\n• Choose between Excel or CSV format\n• Save your processed data",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -535,7 +596,7 @@ class DataJoinerApp:
         # Note about data processing
         note_label = ctk.CTkLabel(
             settings_frame,
-            text="Note: Make sure you have completed all previous steps (1-6) before exporting.",
+            text="Note: Make sure you have completed all previous steps (1-7) before exporting.",
             font=ctk.CTkFont(size=12),
             text_color="orange"
         )
@@ -700,11 +761,12 @@ class DataJoinerApp:
         self.dataset_listbox.delete(0, tk.END)
         for name, df in self.datasets.items():
             info = self.dataset_info.get(name, {})
-            time_period = info.get('time_period', 'Not set')
+            month = info.get('month', 'Not set')
+            year = info.get('year', 'Not set')
             service = info.get('service', 'Not set')
             rows = len(df)
             cols = len(df.columns)
-            display_text = f"{name} ({rows} rows, {cols} cols) - {time_period} - {service}"
+            display_text = f"{name} ({rows} rows, {cols} cols) - {month} {year} - {service}"
             self.dataset_listbox.insert(tk.END, display_text)
     
     def update_dataset_selector(self):
@@ -726,23 +788,30 @@ class DataJoinerApp:
             return
         
         selected_name = list(self.datasets.keys())[selected_indices[0]]
-        time_period = self.time_entry.get().strip()
+        month = self.time_selector.get().strip()
+        year_str = self.year_entry.get().strip()
         service = self.service_entry.get().strip()
         
-        if not time_period or not service:
-            messagebox.showwarning("Warning", "Please enter both time period and service!")
+        if not month or not service or not year_str:
+            messagebox.showwarning("Warning", "Please enter Month, Year, and Service!")
+            return
+
+        try:
+            year_val = int(year_str)
+        except ValueError:
+            messagebox.showwarning("Warning", "Year must be an integer value (e.g., 2023).")
             return
         
         self.dataset_info[selected_name] = {
-            'time_period': time_period,
+            'month': month,
+            'year': year_val,
             'service': service
         }
         
         self.update_dataset_list()
-        self.time_entry.delete(0, tk.END)
+        self.time_selector.set("NA") # Reset to default
+        self.year_entry.delete(0, tk.END)
         self.service_entry.delete(0, tk.END)
-        
-        messagebox.showinfo("Success", f"Info added for dataset '{selected_name}'!")
     
     def remove_dataset(self):
         selected_indices = self.dataset_listbox.curselection()
@@ -831,21 +900,18 @@ class DataJoinerApp:
                 # If dataset_info missing, supply default metadata but record a warning
                 if name not in self.dataset_info:
                     print(f"Warning: No info found for dataset '{name}', using default metadata")
-                    info = {'time_period': 'Unknown', 'service': 'Unknown'}
+                    info = {'month': 'Unknown', 'year': 0, 'service': 'Unknown'}
                 else:
                     info = self.dataset_info[name]
                 
                 # Create a copy of the dataframe
                 df_copy = df.copy()
                 
-                # Ensure all columns are string type to avoid comparison issues
-                for col in df_copy.columns:
-                    if df_copy[col].dtype == 'object':
-                        df_copy[col] = df_copy[col].astype(str)
-                
-                # Add time period and service columns
-                df_copy['Time_Period'] = str(info['time_period'])
-                df_copy['Service'] = str(info['service'])
+                # Add metadata columns
+                # Use .get() with a default value for safety, although the check above should handle it.
+                df_copy['Month'] = str(info.get('month', 'Unknown'))
+                df_copy['Year'] = info.get('year', 0)
+                df_copy['Service'] = str(info.get('service', 'Unknown'))
                 df_copy['Dataset_Name'] = str(name)
                 
                 combined_dfs.append(df_copy)
@@ -1084,49 +1150,25 @@ class DataJoinerApp:
             print(f"Processing {len(self.cleaned_data)} rows from combined data...")  # Debug print
             
             # Clean the address column and get results
-            results = self.clean_address_column(self.cleaned_data[address_column])
-            cleaned_addresses = results[0]
-            apartment_indicators = results[1]
+            cleaned_addresses, auto_cleaned_flags, may_have_word_flags = self.clean_address_column(self.cleaned_data[address_column])
             
             # Verify the lengths match
-            if len(cleaned_addresses) != len(self.cleaned_data) or len(apartment_indicators) != len(self.cleaned_data):
-                raise ValueError(f"Mismatch in processed data lengths: {len(cleaned_addresses)} addresses, {len(apartment_indicators)} indicators, {len(self.cleaned_data)} original rows")
+            if not (len(cleaned_addresses) == len(self.cleaned_data) and len(auto_cleaned_flags) == len(self.cleaned_data) and len(may_have_word_flags) == len(self.cleaned_data)):
+                raise ValueError(f"Mismatch in processed data lengths after cleaning.")
             
             # Add new columns
             new_address_name = f"new_{address_column}"
+            auto_cleaned_col_name = f"{address_column}_auto_cleaned"
+            may_have_word_col_name = f"{address_column}_may_have_word"
+
             self.cleaned_data[new_address_name] = cleaned_addresses
-            self.cleaned_data[f"{address_column}_apartment_indicator"] = apartment_indicators
+            self.cleaned_data[auto_cleaned_col_name] = auto_cleaned_flags
+            self.cleaned_data[may_have_word_col_name] = may_have_word_flags
             
             print(f"Processed {len(self.cleaned_data)} rows successfully")  # Debug print
             
             # Set cleaning status
             self.address_cleaning_done = True
-            
-            # Update the preview
-            self.display_dataframe_in_tree(self.clean_tree, self.cleaned_data)
-            
-            messagebox.showinfo("Success", f"Address cleaning completed successfully!\nProcessed {len(self.cleaned_data)} rows.")
-            
-        except Exception as e:
-            self.address_cleaning_done = False
-            error_msg = f"Failed to clean address data: {str(e)}"
-            print(f"Cleaning error: {error_msg}")
-            messagebox.showerror("Error", error_msg)
-            return
-        
-        try:
-            # Create a copy of the combined data
-            self.cleaned_data = self.combined_data.copy()
-            
-            # Clean the address column and get results
-            results = self.clean_address_column(self.cleaned_data[address_column])
-            cleaned_addresses = results[0]
-            apartment_indicators = results[1]
-            
-            # Add new columns
-            new_address_name = f"new_{address_column}"
-            self.cleaned_data[new_address_name] = cleaned_addresses
-            self.cleaned_data[f"{address_column}_apartment_indicator"] = apartment_indicators
             
             # Display preview
             self.display_dataframe_in_tree(self.clean_tree, self.cleaned_data)
@@ -1134,41 +1176,86 @@ class DataJoinerApp:
             # Update column selectors for additional dataset join
             self.update_join_column_selectors()
             
-            messagebox.showinfo("Success", f"Address cleaning completed! Created columns:\n- {new_address_name}\n- {address_column}_apartment_indicator")
+            messagebox.showinfo("Success", f"Address cleaning completed! Created columns:\n- {new_address_name}\n- {auto_cleaned_col_name}\n- {may_have_word_col_name}")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to clean address data: {str(e)}")
     
     def clean_address_column(self, address_series):
-        """Clean address column and create apartment indicator"""
+        """
+        Processes an address series based on new rules:
+        1. Auto-cleans addresses with high-confidence 'apartment_words'.
+        2. Flags addresses with ambiguous patterns ('#', PO Box, number patterns) for manual review.
+        Returns three Series: cleaned_addresses, auto_cleaned_flags, may_have_word_flags.
+        """
         cleaned_addresses = []
-        apartment_indicators = []
+        auto_cleaned_flags = []
+        may_have_word_flags = []
         
         for address in address_series:
             try:
-                if pd.isna(address) or str(address).strip() == "":
+                address_str = str(address).strip()
+                if pd.isna(address) or not address_str:
                     cleaned_addresses.append("")
-                    apartment_indicators.append("No")
+                    auto_cleaned_flags.append("No")
+                    may_have_word_flags.append("No")
                     continue
             except (TypeError, ValueError):
-                # Handle any type conversion issues
                 cleaned_addresses.append("")
-                apartment_indicators.append("No")
+                auto_cleaned_flags.append("No")
+                may_have_word_flags.append("No")
                 continue
+
+            address_upper = address_str.upper()
             
-            address_str = str(address).strip()
-            original_address = address_str
+            # --- 1. High-Confidence Auto-Cleaning ---
+            earliest_pos = len(address_str)
+            found_apt_word = False
+            for word in self.settings["apartment_words"]:
+                pattern = r'\b' + re.escape(word.upper()) + r'\b'
+                match = re.search(pattern, address_upper)
+                if match and match.start() < earliest_pos:
+                    earliest_pos = match.start()
+                    found_apt_word = True
             
-            # Check for apartment indicators
-            has_apartment = self.check_apartment_indicator(address_str)
+            if found_apt_word:
+                cleaned_addresses.append(address_str[:earliest_pos].strip())
+                auto_cleaned_flags.append("Yes")
+                may_have_word_flags.append("No") # If auto-cleaned, no need for manual review flag
+                continue
+
+            # --- 2. Flag for Manual Review (No Auto-Cleaning) ---
+            flag_for_review = False
+            # Check for '#' symbol
+            if '#' in address_str:
+                flag_for_review = True
             
-            # Clean the address
-            cleaned_address = self.remove_apartment_info(address_str)
+            # Check for PO Box words
+            if not flag_for_review:
+                for po_box in self.settings["po_box_words"]:
+                    if po_box.upper() in address_upper:
+                        flag_for_review = True
+                        break
             
-            cleaned_addresses.append(cleaned_address)
-            apartment_indicators.append("Yes" if has_apartment else "No")
-        
-        return pd.Series(cleaned_addresses), pd.Series(apartment_indicators)
+            # Check for number patterns
+            if not flag_for_review:
+                for pattern in self.settings["number_patterns"]:
+                    if re.search(pattern, address_upper):
+                        flag_for_review = True
+                        break
+            
+            # --- 3. Final Assignment ---
+            if flag_for_review:
+                cleaned_addresses.append(address_str) # Keep original address
+                auto_cleaned_flags.append("No")
+                may_have_word_flags.append("Yes")
+            else:
+                # No indicators found
+                cleaned_addresses.append(address_str)
+                auto_cleaned_flags.append("No")
+                may_have_word_flags.append("No")
+
+        return pd.Series(cleaned_addresses), pd.Series(auto_cleaned_flags), pd.Series(may_have_word_flags)
     
     def check_apartment_indicator(self, address):
         """Check if address contains apartment-like information"""
@@ -1272,14 +1359,18 @@ class DataJoinerApp:
                 # Store additional dataset
                 self.additional_dataset = df
                 
-                # Update column selector
-                self.additional_join_column.configure(values=list(df.columns))
+                # Update column selector for summarization tab
+                self.summarize_column_selector.configure(values=list(df.columns))
                 if not df.columns.empty:
-                    self.additional_join_column.set(df.columns[0])
+                    self.summarize_column_selector.set(df.columns[0])
                 
-                messagebox.showinfo("Success", "Additional dataset loaded successfully!")
+                # Display preview
+                self.display_dataframe_in_tree(self.additional_tree, self.additional_dataset)
+                
+                messagebox.showinfo("Success", "Additional dataset loaded successfully! You can now proceed to Step 6 to summarize it.")
                 
             except Exception as e:
+                self.additional_dataset = None
                 messagebox.showerror("Error", f"Failed to load additional dataset: {str(e)}")
     
     def join_additional_dataset(self):
@@ -1288,8 +1379,8 @@ class DataJoinerApp:
             messagebox.showwarning("Warning", "Please clean address data first!")
             return
         
-        if self.additional_dataset is None:
-            messagebox.showwarning("Warning", "Please load additional dataset first!")
+        if self.summarized_additional_data is None:
+            messagebox.showwarning("Warning", "Please summarize the additional dataset in Step 6 first!")
             return
         
         cleaned_column = self.cleaned_join_column.get()
@@ -1302,7 +1393,7 @@ class DataJoinerApp:
         try:
             # Perform left join
             self.final_data = self.cleaned_data.merge(
-                self.additional_dataset,
+                self.summarized_additional_data,
                 left_on=cleaned_column,
                 right_on=additional_column,
                 how='left',
@@ -1310,7 +1401,8 @@ class DataJoinerApp:
             )
             
             # Display preview
-            self.display_dataframe_in_tree(self.additional_tree, self.final_data)
+            self.display_dataframe_in_tree(self.final_tree, self.final_data)
+            self.additional_join_done = True
             
             messagebox.showinfo("Success", "Additional dataset joined successfully!")
             
@@ -1330,6 +1422,41 @@ class DataJoinerApp:
             self.cleaned_join_column.configure(values=list(self.cleaned_data.columns))
             if not self.cleaned_data.columns.empty:
                 self.cleaned_join_column.set(self.cleaned_data.columns[0])
+    
+    def summarize_additional_data_action(self):
+        """Summarize the additional dataset by a selected column."""
+        if self.additional_dataset is None:
+            messagebox.showwarning("Warning", "Please load an additional dataset in Step 5 first.")
+            return
+
+        summarize_col = self.summarize_column_selector.get()
+        if not summarize_col:
+            messagebox.showwarning("Warning", "Please select a column to summarize by.")
+            return
+
+        try:
+            # Perform value_counts
+            summary = self.additional_dataset[summarize_col].value_counts().reset_index()
+            summary.columns = [summarize_col, 'Count']
+
+            self.summarized_additional_data = summary
+            self.additional_data_summarized = True
+
+            # Display preview
+            self.display_dataframe_in_tree(self.summarize_tree, self.summarized_additional_data)
+
+            # Update column selectors for the final join tab
+            if self.summarized_additional_data is not None:
+                self.additional_join_column.configure(values=list(self.summarized_additional_data.columns))
+                if not self.summarized_additional_data.columns.empty:
+                    self.additional_join_column.set(self.summarized_additional_data.columns[0])
+
+            messagebox.showinfo("Success", f"Data summarized by '{summarize_col}'. You can now proceed to Step 7 to join this summary.")
+
+        except Exception as e:
+            self.summarized_additional_data = None
+            self.additional_data_summarized = False
+            messagebox.showerror("Error", f"Failed to summarize data: {str(e)}")
     
     def display_dataframe_in_tree(self, tree_widget, dataframe):
         """Display dataframe in tree widget"""
