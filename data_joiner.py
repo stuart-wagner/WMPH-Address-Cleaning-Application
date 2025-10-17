@@ -246,9 +246,13 @@ class DataJoinerApp:
         self.join_summary_label = ctk.CTkLabel(join_frame, text="", font=ctk.CTkFont(size=12), justify="left")
         self.join_summary_label.pack(fill="x", padx=10, pady=(0,10))
 
-        # Debug save button to write combined dataframe to disk for inspection
-        self.save_debug_btn = ctk.CTkButton(join_frame, text="Save Combined CSV (debug)", command=self.save_combined_debug)
-        self.save_debug_btn.pack(pady=(0,10))
+        # Save Combined CSV button
+        self.save_csv_btn = ctk.CTkButton(join_frame, text="Save Combined CSV", command=self.save_combined_debug)
+        self.save_csv_btn.pack(pady=(0,5))
+
+        # Save Combined XLSX button
+        self.save_xlsx_btn = ctk.CTkButton(join_frame, text="Save Combined XLSX", command=self.save_combined_xlsx)
+        self.save_xlsx_btn.pack(pady=(0,10))
 
         # Data preview
         self.join_preview_frame = ctk.CTkFrame(join_frame)
@@ -937,24 +941,30 @@ class DataJoinerApp:
                 messagebox.showerror("Error", "Failed to combine datasets. Check the console for details.")
                 return
             
-            # Display preview
-            self.display_dataframe_in_tree(self.join_tree, self.combined_data)
-            # Debug info: rows per dataset and combined shape
-            try:
-                per_ds = {name: len(df) for name, df in self.datasets.items()}
-                combined_shape = self.combined_data.shape if self.combined_data is not None else (0,0)
-                summary_lines = [f"Datasets included: {len(self.datasets)}"]
-                for k,v in per_ds.items():
-                    summary_lines.append(f" - {k}: {v} rows")
-                summary_lines.append(f"Combined shape: {combined_shape[0]} rows x {combined_shape[1]} cols")
-                summary_text = "\n".join(summary_lines)
-                print(summary_text)
+            # Display preview with complete dataset
+            if self.combined_data is not None:
+                self.display_dataframe_in_tree(self.join_tree, self.combined_data)
+                
+                # Debug info: rows per dataset and combined shape
                 try:
+                    per_ds = {name: len(df) for name, df in self.datasets.items()}
+                    combined_shape = self.combined_data.shape
+                    summary_lines = [f"Datasets included: {len(self.datasets)}"]
+                    total_input_rows = 0
+                    for k,v in per_ds.items():
+                        total_input_rows += v
+                        summary_lines.append(f" - {k}: {v} rows")
+                    summary_lines.append(f"Combined shape: {combined_shape[0]} rows x {combined_shape[1]} cols")
+                    if total_input_rows != combined_shape[0]:
+                        summary_lines.append(f"WARNING: Input rows ({total_input_rows}) != Combined rows ({combined_shape[0]})")
+                    summary_text = "\n".join(summary_lines)
+                    print(summary_text)  # Debug output
                     self.join_summary_label.configure(text=summary_text)
-                except Exception:
+                except Exception as e:
+                    print(f"Error updating join summary: {e}")
                     pass
-            except Exception as e:
-                print(f"Error building join summary: {e}")
+            #except Exception as e:
+            #    print(f"Error building join summary: {e}")
             # Mark datasets joined
             self.datasets_joined = True
             # Ensure address selector updated
@@ -1007,6 +1017,25 @@ class DataJoinerApp:
                 messagebox.showerror("Error", "Combined data is not a valid DataFrame.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save combined CSV: {e}")
+
+    def save_combined_xlsx(self):
+        """Save the combined dataframe to XLSX for debugging purposes"""
+        if self.combined_data is None:
+            messagebox.showwarning("Warning", "No combined data to save. Please run 'Join Datasets' first.")
+            return
+        try:
+            default_name = f"combined_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile=default_name, filetypes=[("Excel files","*.xlsx"), ("All files","*.*")])
+            if not save_path:
+                return
+            # Ensure it's a DataFrame
+            if hasattr(self.combined_data, 'to_excel'):
+                self.combined_data.to_excel(save_path, index=False)
+                messagebox.showinfo("Saved", f"Combined XLSX saved to:\n{save_path}")
+            else:
+                messagebox.showerror("Error", "Combined data is not a valid DataFrame.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save combined XLSX: {e}")
     
     def clean_address_data(self):
         """Clean address data and create apartment indicator"""
@@ -1034,7 +1063,7 @@ class DataJoinerApp:
             self.address_cleaning_done = True
             
             # Update the preview
-            self.display_dataframe_in_tree(self.clean_preview_tree, self.cleaned_data)
+            self.display_dataframe_in_tree(self.clean_tree, self.cleaned_data)
             
             # Enable next step
             self.additional_dataset_btn.configure(state="normal")
