@@ -1,0 +1,13 @@
+Campaign_ID,Campaign_Name,Budget,Impressions,Clicks,Conversions,Channel
+MARKETING REPORT,,,,,,
+Q3 2023,,,,,,
+Generated on: 2023-09-30,,,,,,
+,,,,,,
+3001,Summer Sale,10000,50000,2500,250,Email
+3002,Back to School,15000,75000,3750,375,Social Media
+3003,Holiday Prep,20000,100000,5000,500,Google Ads
+3004,New Year Special,12000,60000,3000,300,Email
+3005,Valentine's Day,8000,40000,2000,200,Social Media
+3006,Spring Launch,18000,90000,4500,450,Google Ads
+3007,Summer Campaign,22000,110000,5500,550,Email
+3008,Fall Promotion,16000,80000,4000,400,Social Media

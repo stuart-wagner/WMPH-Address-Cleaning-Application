@@ -1,0 +1,13 @@
+Customer_ID,Issue_Type,Priority,Resolution_Time_Hours,Satisfaction_Rating,Agent_Name
+CUSTOMER SUPPORT REPORT,,,,,
+Q1 2023,,,,,
+Generated on: 2023-03-31,,,,,
+,,,,,
+1001,Login Problem,High,2,4,Alice
+1002,Payment Issue,Medium,4,3,Bob
+1003,Feature Request,Low,8,5,Charlie
+1004,Bug Report,High,1,2,Alice
+1005,Account Access,Medium,6,4,David
+1006,Billing Question,Low,3,5,Eve
+1007,Technical Support,High,2,3,Bob
+1008,Feature Request,Medium,5,4,Charlie

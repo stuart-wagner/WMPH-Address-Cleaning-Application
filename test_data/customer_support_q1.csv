@@ -1,0 +1,9 @@
+Customer_ID,Issue_Type,Resolution_Time,Satisfaction
+Customer Support Report,,,
+Q1 2023,,,
+,,,
+1,Login,15,5
+2,Payment,30,4
+3,Feature,45,3
+4,Bug,20,5
+5,Account,60,2

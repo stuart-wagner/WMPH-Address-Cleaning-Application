@@ -1,0 +1,14 @@
+Client_ID,Product_Name,Sale_Amount,Sales_Rep,Region,Deal_Status
+SALES REPORT,,,,,
+Q2 2023,,,,,
+Generated on: 2023-06-30,,,,,
+,,,,,
+2001,Software A,5000,John,North,Closed
+2002,Software B,7500,Jane,South,Closed
+2003,Software A,3000,John,East,Closed
+2004,Software C,12000,Bob,West,Closed
+2005,Software B,6000,Jane,North,Closed
+2006,Software A,4500,Alice,South,Closed
+2007,Software C,9000,Bob,East,Closed
+2008,Software B,5500,John,West,Closed
+2009,Software A,3500,Alice,North,Closed
