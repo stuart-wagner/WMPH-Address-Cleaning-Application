@@ -221,12 +221,18 @@ class DataJoinerApp:
         self.year_entry = ctk.CTkEntry(self.info_frame, placeholder_text="e.g., 2023", width=100)
         self.year_entry.grid(row=0, column=3, padx=10, pady=10)
 
+        # Bind the Enter key in the year entry to the add_dataset_info function
+        self.year_entry.bind("<Return>", lambda event: self.add_dataset_info())
+
         # Service input
         service_label = ctk.CTkLabel(self.info_frame, text="Service:", font=ctk.CTkFont(size=12, weight="bold"))
         service_label.grid(row=0, column=4, padx=10, pady=10, sticky="w")
         
         self.service_entry = ctk.CTkEntry(self.info_frame, placeholder_text="e.g., Customer Support, Sales", width=200)
         self.service_entry.grid(row=0, column=5, padx=10, pady=10)
+        
+        # Bind the Enter key in the service entry to the add_dataset_info function
+        self.service_entry.bind("<Return>", lambda event: self.add_dataset_info())
         
         # Add info button
         add_info_btn = ctk.CTkButton(
@@ -861,9 +867,6 @@ class DataJoinerApp:
         }
         
         self.update_dataset_list()
-        self.time_selector.set("NA") # Reset to default
-        self.year_entry.delete(0, tk.END)
-        self.service_entry.delete(0, tk.END)
     
     def remove_dataset(self):
         selected_indices = self.dataset_listbox.curselection()
@@ -946,11 +949,22 @@ class DataJoinerApp:
     def combine_datasets(self):
         """Combine datasets with robust error handling"""
         try:
-            # Get all unique column names across all datasets to ensure consistent structure
-            all_columns = set()
-            for df in self.datasets.values():
-                all_columns.update(df.columns)
-            all_columns = list(all_columns)
+            # Establish a stable and predictable column order.
+            # Start with the columns from the first loaded dataset, then append new ones.
+            if not self.datasets:
+                return None
+
+            # Get columns from the first dataset in order
+            first_dataset_name = next(iter(self.datasets))
+            ordered_columns = list(self.datasets[first_dataset_name].columns)
+            
+            # Discover new columns from other datasets
+            all_columns_set = set(ordered_columns)
+            for name, df in self.datasets.items():
+                for col in df.columns:
+                    if col not in all_columns_set:
+                        ordered_columns.append(col)
+                        all_columns_set.add(col)
 
             combined_dfs = []
             
@@ -966,7 +980,7 @@ class DataJoinerApp:
                 df_copy = df.copy()
 
                 # Reindex to ensure all dataframes have the same columns, filling missing with empty string
-                df_copy = df_copy.reindex(columns=all_columns, fill_value="")
+                df_copy = df_copy.reindex(columns=ordered_columns, fill_value="")
                 
                 # Add metadata columns
                 # Use .get() with a default value for safety, although the check above should handle it.
