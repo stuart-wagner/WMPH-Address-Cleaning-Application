@@ -34,6 +34,7 @@ class DataJoinerApp:
         self.datasets = {}  # Store loaded datasets
         self.dataset_info = {}  # Store time period and service info for each dataset
         self.combined_data = None
+        self.deduplicated_data = None
         self.cleaned_data = None
         self.final_data = None
         self.additional_dataset = None
@@ -41,6 +42,7 @@ class DataJoinerApp:
         
         # Status tracking
         self.datasets_joined = False
+        self.data_deduplicated = False
         self.address_cleaning_done = False
         self.additional_data_summarized = False
         self.additional_join_done = False
@@ -121,25 +123,29 @@ class DataJoinerApp:
         self.join_tab = self.notebook.add("3. Join & Preview")
         self.create_join_tab()
         
-        # Step 4: Address Cleaning Tab
-        self.clean_tab = self.notebook.add("4. Address Cleaning")
+        # Step 4: Deduplicate by Date Tab
+        self.deduplicate_tab = self.notebook.add("4. Deduplicate by Date")
+        self.create_deduplicate_tab()
+        
+        # Step 5: Address Cleaning Tab
+        self.clean_tab = self.notebook.add("5. Address Cleaning")
         self.create_clean_tab()
         
         
-        # Step 5: Load Additional Dataset Tab
-        self.additional_tab = self.notebook.add("5. Additional Dataset")
+        # Step 6: Load Additional Dataset Tab
+        self.additional_tab = self.notebook.add("6. Additional Dataset")
         self.create_additional_tab()
         
-        # Step 6: Summarize Data Tab
-        self.summarize_tab = self.notebook.add("6. Summarize Data")
+        # Step 7: Summarize Data Tab
+        self.summarize_tab = self.notebook.add("7. Summarize Data")
         self.create_summarize_tab()
         
-        # Step 7: Final Review Tab
-        self.final_tab = self.notebook.add("7. Left Join")
+        # Step 8: Final Review Tab
+        self.final_tab = self.notebook.add("8. Left Join")
         self.create_final_tab()
         
-        # Step 8: Export Tab
-        self.export_tab = self.notebook.add("8. Export")
+        # Step 9: Export Tab
+        self.export_tab = self.notebook.add("9. Export")
         self.create_export_tab()
         
         # Settings button
@@ -299,6 +305,44 @@ class DataJoinerApp:
         self.join_tree_scroll_y.config(command=self.join_tree.yview)
         self.join_tree_scroll_x.config(command=self.join_tree.xview)
     
+    def create_deduplicate_tab(self):
+        """Create the deduplicate by date tab"""
+        dedup_frame = ctk.CTkFrame(self.deduplicate_tab)
+        dedup_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        instructions = ctk.CTkLabel(
+            dedup_frame,
+            text="Step 4: Keep only the most recent record for each unique entry in a selected column.",
+            font=ctk.CTkFont(size=12),
+            justify="left"
+        )
+        instructions.pack(pady=(20, 10))
+
+        # Column selection
+        column_frame = ctk.CTkFrame(dedup_frame)
+        column_frame.pack(fill="x", pady=10)
+        ctk.CTkLabel(column_frame, text="Select Column to Group By:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
+        self.deduplicate_column_selector = ctk.CTkComboBox(column_frame, values=[])
+        self.deduplicate_column_selector.pack(side="left", padx=10, pady=10)
+
+        # Deduplicate button
+        dedup_btn = ctk.CTkButton(dedup_frame, text="Deduplicate by Date", command=self.deduplicate_by_date_action, height=40, font=ctk.CTkFont(size=14, weight="bold"))
+        dedup_btn.pack(pady=10)
+
+        # Results preview
+        self.dedup_preview_frame = ctk.CTkFrame(dedup_frame)
+        self.dedup_preview_frame.pack(fill="both", expand=True, pady=10)
+        self.dedup_tree_frame = ctk.CTkFrame(self.dedup_preview_frame)
+        self.dedup_tree_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.dedup_tree_scroll_y = tk.Scrollbar(self.dedup_tree_frame)
+        self.dedup_tree_scroll_y.pack(side="right", fill="y")
+        self.dedup_tree_scroll_x = tk.Scrollbar(self.dedup_tree_frame, orient="horizontal")
+        self.dedup_tree_scroll_x.pack(side="bottom", fill="x")
+        self.dedup_tree = ttk.Treeview(self.dedup_tree_frame, yscrollcommand=self.dedup_tree_scroll_y.set, xscrollcommand=self.dedup_tree_scroll_x.set)
+        self.dedup_tree.pack(side="left", fill="both", expand=True)
+        self.dedup_tree_scroll_y.config(command=self.dedup_tree.yview)
+        self.dedup_tree_scroll_x.config(command=self.dedup_tree.xview)
+
     def create_clean_tab(self):
         """Create the address cleaning tab"""
         clean_frame = ctk.CTkFrame(self.clean_tab)
@@ -307,7 +351,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             clean_frame,
-            text="Step 4: Clean address data\n• High-confidence words (e.g., 'APT', 'UNIT') are auto-cleaned.\n• Ambiguous patterns (e.g., '#', 'PO BOX') are flagged for review.",
+            text="Step 5: Clean address data\n• High-confidence words (e.g., 'APT', 'UNIT') are auto-cleaned.\n• Ambiguous patterns (e.g., '#', 'PO BOX') are flagged for review.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -319,7 +363,7 @@ class DataJoinerApp:
         
         ctk.CTkLabel(column_frame, text="Select Address Column:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
         
-        self.address_column_selector = ctk.CTkComboBox(column_frame, values=[], command=self.on_address_column_select)
+        self.address_column_selector = ctk.CTkComboBox(column_frame, values=[])
         self.address_column_selector.pack(side="left", padx=10, pady=10)
         
         # Clean button
@@ -332,6 +376,14 @@ class DataJoinerApp:
         )
         clean_btn.pack(pady=10)
         
+        # Debug save buttons
+        debug_frame = ctk.CTkFrame(clean_frame)
+        debug_frame.pack(pady=(0, 10))
+        save_cleaned_csv_btn = ctk.CTkButton(debug_frame, text="Save Cleaned CSV (Debug)", command=self.save_cleaned_debug_csv)
+        save_cleaned_csv_btn.pack(side="left", padx=5)
+        save_cleaned_xlsx_btn = ctk.CTkButton(debug_frame, text="Save Cleaned XLSX (Debug)", command=self.save_cleaned_debug_xlsx)
+        save_cleaned_xlsx_btn.pack(side="left", padx=5)
+
         # Results preview
         self.clean_preview_frame = ctk.CTkFrame(clean_frame)
         self.clean_preview_frame.pack(fill="both", expand=True, pady=10)
@@ -362,7 +414,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             additional_frame,
-            text="Step 5: Load an additional dataset to enrich your data.\n• This dataset will be summarized in the next step before joining.",
+            text="Step 6: Load an additional dataset to enrich your data.\n• This dataset will be summarized in the next step before joining.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -407,7 +459,7 @@ class DataJoinerApp:
 
         instructions = ctk.CTkLabel(
             summarize_frame,
-            text="Step 6: Summarize the additional dataset by a selected column.\n• This creates a count of unique values in that column.",
+            text="Step 7: Summarize the additional dataset by a selected column.\n• This creates a count of unique values in that column.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -446,7 +498,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             final_frame,
-            text="Step 7: Join the cleaned data with the summarized additional data.\n• This performs a left join, keeping all rows from your main dataset.",
+            text="Step 8: Join the cleaned data with the summarized additional data.\n• This performs a left join, keeping all rows from your main dataset.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -581,7 +633,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             export_frame,
-            text="Step 8: Export final dataset\n• Export the complete merged dataset\n• Choose between Excel or CSV format\n• Save your processed data",
+            text="Step 9: Export final dataset\n• Export the complete merged dataset\n• Choose between Excel or CSV format\n• Save your processed data",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -596,7 +648,7 @@ class DataJoinerApp:
         # Note about data processing
         note_label = ctk.CTkLabel(
             settings_frame,
-            text="Note: Make sure you have completed all previous steps (1-7) before exporting.",
+            text="Note: Make sure you have completed all previous steps (1-8) before exporting.",
             font=ctk.CTkFont(size=12),
             text_color="orange"
         )
@@ -894,6 +946,12 @@ class DataJoinerApp:
     def combine_datasets(self):
         """Combine datasets with robust error handling"""
         try:
+            # Get all unique column names across all datasets to ensure consistent structure
+            all_columns = set()
+            for df in self.datasets.values():
+                all_columns.update(df.columns)
+            all_columns = list(all_columns)
+
             combined_dfs = []
             
             for name, df in self.datasets.items():
@@ -906,6 +964,9 @@ class DataJoinerApp:
                 
                 # Create a copy of the dataframe
                 df_copy = df.copy()
+
+                # Reindex to ensure all dataframes have the same columns, filling missing with empty string
+                df_copy = df_copy.reindex(columns=all_columns, fill_value="")
                 
                 # Add metadata columns
                 # Use .get() with a default value for safety, although the check above should handle it.
@@ -1052,19 +1113,13 @@ class DataJoinerApp:
             # Mark datasets joined
             self.datasets_joined = True
             # Ensure address selector updated
-            column_list = list(self.combined_data.columns)
+            column_list = list(self.combined_data.columns) if self.combined_data is not None else []
             try:
-                self.address_column_selector.configure(values=column_list)
-                if len(column_list) > 0:
-                    self.address_column_selector.set(column_list[0])
+                self.deduplicate_column_selector.configure(values=column_list)
+                if column_list:
+                    self.deduplicate_column_selector.set(column_list[0])
             except Exception:
-                pass
-            
-            # Update address column selector
-            column_list = list(self.combined_data.columns)
-            self.address_column_selector.configure(values=column_list)
-            if len(column_list) > 0:
-                self.address_column_selector.set(column_list[0])
+                pass # Ignore if widget doesn't exist yet
             
             total_rows = len(self.combined_data)
             preview_rows = min(200, total_rows)
@@ -1077,11 +1132,52 @@ class DataJoinerApp:
             traceback.print_exc()
             messagebox.showerror("Error", error_msg)
     
-    def on_address_column_select(self, column_name):
-        """Handle address column selection"""
-        if self.combined_data is not None and not self.combined_data.columns.empty and column_name in self.combined_data.columns:
-            # Update the address column selector with available columns
-            self.address_column_selector.set(column_name)
+    def deduplicate_by_date_action(self):
+        """Groups by a column and keeps the most recent entry based on Year and Month."""
+        if not self.datasets_joined or self.combined_data is None:
+            messagebox.showwarning("Warning", "Please join datasets in Step 3 first.")
+            return
+
+        group_by_col = self.deduplicate_column_selector.get()
+        if not group_by_col:
+            messagebox.showwarning("Warning", "Please select a column to group by.")
+            return
+
+        try:
+            df = self.combined_data.copy()
+
+            # Map month names to numbers for sorting. 'NA' becomes 0 (oldest).
+            month_map = {
+                "January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
+                "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12,
+                "NA": 0
+            }
+            df['Month_Num'] = df['Month'].map(month_map).fillna(0)
+
+            # Sort by Year and Month_Num descending to bring the most recent to the top of each group
+            df_sorted = df.sort_values(by=['Year', 'Month_Num'], ascending=[False, False])
+
+            # Drop duplicates on the selected column, keeping the first (most recent) entry
+            self.deduplicated_data = df_sorted.drop_duplicates(subset=[group_by_col], keep='first')
+
+            # Clean up the temporary Month_Num column
+            self.deduplicated_data = self.deduplicated_data.drop(columns=['Month_Num'])
+            
+            self.data_deduplicated = True
+
+            # Update UI
+            self.display_dataframe_in_tree(self.dedup_tree, self.deduplicated_data)
+            
+            # Update the column selector for the next step (Address Cleaning)
+            if self.deduplicated_data is not None:
+                self.address_column_selector.configure(values=list(self.deduplicated_data.columns))
+                if not self.deduplicated_data.columns.empty:
+                    self.address_column_selector.set(self.deduplicated_data.columns[0])
+
+            messagebox.showinfo("Success", f"Deduplication complete. Kept the most recent record for each unique '{group_by_col}'.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to deduplicate data: {str(e)}")
 
     def save_combined_debug(self):
         """Save the combined dataframe to CSV for debugging purposes"""
@@ -1121,10 +1217,46 @@ class DataJoinerApp:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save combined XLSX: {e}")
     
+    def save_cleaned_debug_csv(self):
+        """Save the cleaned dataframe to CSV for debugging purposes"""
+        if self.cleaned_data is None:
+            messagebox.showwarning("Warning", "No cleaned data to save. Please run 'Clean Address Data' first.")
+            return
+        try:
+            default_name = f"cleaned_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            save_path = filedialog.asksaveasfilename(defaultextension=".csv", initialfile=default_name, filetypes=[("CSV files","*.csv"), ("All files","*.*")])
+            if not save_path:
+                return
+            if hasattr(self.cleaned_data, 'to_csv'):
+                self.cleaned_data.to_csv(save_path, index=False)
+                messagebox.showinfo("Saved", f"Cleaned CSV saved to:\n{save_path}")
+            else:
+                messagebox.showerror("Error", "Cleaned data is not a valid DataFrame.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save cleaned CSV: {e}")
+
+    def save_cleaned_debug_xlsx(self):
+        """Save the cleaned dataframe to XLSX for debugging purposes"""
+        if self.cleaned_data is None:
+            messagebox.showwarning("Warning", "No cleaned data to save. Please run 'Clean Address Data' first.")
+            return
+        try:
+            default_name = f"cleaned_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile=default_name, filetypes=[("Excel files","*.xlsx"), ("All files","*.*")])
+            if not save_path:
+                return
+            if hasattr(self.cleaned_data, 'to_excel'):
+                self.cleaned_data.to_excel(save_path, index=False)
+                messagebox.showinfo("Saved", f"Cleaned XLSX saved to:\n{save_path}")
+            else:
+                messagebox.showerror("Error", "Cleaned data is not a valid DataFrame.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save cleaned XLSX: {e}")
+
     def clean_address_data(self):
         """Clean address data and create apartment indicator"""
-        if not self.datasets_joined or self.combined_data is None:
-            messagebox.showwarning("Warning", "Please join datasets first!")
+        if not self.data_deduplicated or self.deduplicated_data is None:
+            messagebox.showwarning("Warning", "Please deduplicate data in Step 4 first!")
             return
         
         address_column = self.address_column_selector.get()
@@ -1132,20 +1264,20 @@ class DataJoinerApp:
             messagebox.showwarning("Warning", "Please select an address column!")
             return
             
-        if not address_column in self.combined_data.columns:
-            messagebox.showerror("Error", f"Column '{address_column}' not found in combined data!")
+        if not address_column in self.deduplicated_data.columns:
+            messagebox.showerror("Error", f"Column '{address_column}' not found in the deduplicated data!")
             return
         
-        if self.combined_data.columns.empty or address_column not in self.combined_data.columns:
+        if self.deduplicated_data.columns.empty or address_column not in self.deduplicated_data.columns:
             messagebox.showerror("Error", f"Column '{address_column}' not found in data!")
             return
             
         try:
             # Store original data before cleaning
-            self.pre_cleaned_data = self.combined_data.copy()
+            self.pre_cleaned_data = self.deduplicated_data.copy()
             
             # Create a copy of the combined data
-            self.cleaned_data = self.combined_data.copy()
+            self.cleaned_data = self.deduplicated_data.copy()
             
             print(f"Processing {len(self.cleaned_data)} rows from combined data...")  # Debug print
             
@@ -1156,6 +1288,11 @@ class DataJoinerApp:
             if not (len(cleaned_addresses) == len(self.cleaned_data) and len(auto_cleaned_flags) == len(self.cleaned_data) and len(may_have_word_flags) == len(self.cleaned_data)):
                 raise ValueError(f"Mismatch in processed data lengths after cleaning.")
             
+            # CRITICAL FIX: Ensure the index of the new Series matches the DataFrame's index to prevent misalignment.
+            cleaned_addresses.index = self.cleaned_data.index
+            auto_cleaned_flags.index = self.cleaned_data.index
+            may_have_word_flags.index = self.cleaned_data.index
+
             # Add new columns
             new_address_name = f"new_{address_column}"
             auto_cleaned_col_name = f"{address_column}_auto_cleaned"
@@ -1193,14 +1330,16 @@ class DataJoinerApp:
         may_have_word_flags = []
         
         for address in address_series:
-            try:
-                address_str = str(address).strip()
-                if pd.isna(address) or not address_str:
-                    cleaned_addresses.append("")
-                    auto_cleaned_flags.append("No")
-                    may_have_word_flags.append("No")
-                    continue
-            except (TypeError, ValueError):
+            # First, check for pandas NA/NaN values. This is the most reliable check for missing data.
+            if pd.isna(address):
+                cleaned_addresses.append("")
+                auto_cleaned_flags.append("No")
+                may_have_word_flags.append("No")
+                continue
+
+            # If not NA, convert to string and check if it's empty after stripping whitespace.
+            address_str = str(address).strip()
+            if not address_str:
                 cleaned_addresses.append("")
                 auto_cleaned_flags.append("No")
                 may_have_word_flags.append("No")
@@ -1257,75 +1396,6 @@ class DataJoinerApp:
 
         return pd.Series(cleaned_addresses), pd.Series(auto_cleaned_flags), pd.Series(may_have_word_flags)
     
-    def check_apartment_indicator(self, address):
-        """Check if address contains apartment-like information"""
-        address_upper = address.upper()
-        
-        # Check for apartment words (as whole words)
-        for word in self.settings["apartment_words"]:
-            # Use word boundaries to match whole words only
-            pattern = r'\b' + re.escape(word.upper()) + r'\b'
-            if re.search(pattern, address_upper):
-                return True
-        
-        # Check for PO Box
-        for po_box in self.settings["po_box_words"]:
-            if po_box.upper() in address_upper:
-                return True
-        
-        # Check for number patterns (but not just ending with a number)
-        for pattern in self.settings["number_patterns"]:
-            if re.search(pattern, address_upper):
-                # Additional check: make sure it's not just a street number
-                # Look for apartment-like words before the number
-                match = re.search(pattern, address_upper)
-                if match:
-                    # Check if there's an apartment word before this number
-                    before_number = address_upper[:match.start()].strip()
-                    # Only consider it an apartment if there's an apartment word or # before the number
-                    has_apt_word = False
-                    for apt_word in self.settings["apartment_words"]:
-                        if apt_word.upper() in before_number:
-                            has_apt_word = True
-                            break
-                    
-                    if has_apt_word or '#' in before_number:
-                        return True
-                    # If it's just a number at the end without apartment words, don't consider it an apartment
-        
-        return False
-    
-    def remove_apartment_info(self, address):
-        """Remove apartment information from address"""
-        address_upper = address.upper()
-        
-        # Find the earliest occurrence of any apartment word
-        earliest_pos = len(address)
-        for word in self.settings["apartment_words"]:
-            # Use word boundaries to match whole words only
-            pattern = r'\b' + re.escape(word.upper()) + r'\b'
-            match = re.search(pattern, address_upper)
-            if match and match.start() < earliest_pos:
-                earliest_pos = match.start()
-        
-        # Also check for # symbol
-        hash_pos = address_upper.find('#')
-        if hash_pos != -1 and hash_pos < earliest_pos:
-            earliest_pos = hash_pos
-        
-        # Also check for PO Box
-        for po_box in self.settings["po_box_words"]:
-            po_pos = address_upper.find(po_box.upper())
-            if po_pos != -1 and po_pos < earliest_pos:
-                earliest_pos = po_pos
-        
-        # If no apartment word or # found, return original
-        if earliest_pos == len(address):
-            return address
-        
-        # Return address up to the apartment word or #
-        return address[:earliest_pos].strip()
-    
     def load_additional_dataset(self):
         """Load additional dataset for left join"""
         file_path = filedialog.askopenfilename(
@@ -1380,7 +1450,7 @@ class DataJoinerApp:
             return
         
         if self.summarized_additional_data is None:
-            messagebox.showwarning("Warning", "Please summarize the additional dataset in Step 6 first!")
+            messagebox.showwarning("Warning", "Please summarize the additional dataset in Step 7 first!")
             return
         
         cleaned_column = self.cleaned_join_column.get()
@@ -1426,7 +1496,7 @@ class DataJoinerApp:
     def summarize_additional_data_action(self):
         """Summarize the additional dataset by a selected column."""
         if self.additional_dataset is None:
-            messagebox.showwarning("Warning", "Please load an additional dataset in Step 5 first.")
+            messagebox.showwarning("Warning", "Please load an additional dataset in Step 6 first.")
             return
 
         summarize_col = self.summarize_column_selector.get()
@@ -1451,7 +1521,7 @@ class DataJoinerApp:
                 if not self.summarized_additional_data.columns.empty:
                     self.additional_join_column.set(self.summarized_additional_data.columns[0])
 
-            messagebox.showinfo("Success", f"Data summarized by '{summarize_col}'. You can now proceed to Step 7 to join this summary.")
+            messagebox.showinfo("Success", f"Data summarized by '{summarize_col}'. You can now proceed to Step 8 to join this summary.")
 
         except Exception as e:
             self.summarized_additional_data = None
