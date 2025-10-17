@@ -19,6 +19,10 @@ class DataJoinerApp:
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
         
+        # Initialize review tab variables
+        self.current_preview_dataset = None
+        self.column_rename_history = {}
+        
         # Initialize data storage
         self.datasets = {}  # Store loaded datasets
         self.dataset_info = {}  # Store time period and service info for each dataset
@@ -26,6 +30,15 @@ class DataJoinerApp:
         self.cleaned_data = None
         self.final_data = None
         self.additional_dataset = None
+        
+        # Status tracking
+        self.datasets_joined = False
+        self.address_cleaning_done = False
+        self.additional_join_done = False
+        
+        # Backup storage for reverting changes
+        self.pre_cleaned_data = None
+        self.pre_additional_join_data = None
         
         # Settings for address cleaning
         self.settings_file = "settings.json"
@@ -90,17 +103,18 @@ class DataJoinerApp:
         self.load_tab = self.notebook.add("1. Load Data")
         self.create_load_tab()
         
-        # Step 2: Join & Preview Tab
-        self.join_tab = self.notebook.add("2. Join & Preview")
+        # Step 2: Review & Rename Tab
+        self.review_tab = self.notebook.add("2. Review & Rename")
+        self.create_review_tab()
+        
+        # Step 3: Join & Preview Tab
+        self.join_tab = self.notebook.add("3. Join & Preview")
         self.create_join_tab()
         
-        # Step 3: Address Cleaning Tab
-        self.clean_tab = self.notebook.add("3. Address Cleaning")
+        # Step 4: Address Cleaning Tab
+        self.clean_tab = self.notebook.add("4. Address Cleaning")
         self.create_clean_tab()
         
-        # Step 4: Review Cleaned Data Tab
-        self.review_tab = self.notebook.add("4. Review Cleaned Data")
-        self.create_review_tab()
         
         # Step 5: Additional Dataset Tab
         self.additional_tab = self.notebook.add("5. Additional Dataset")
@@ -420,14 +434,14 @@ class DataJoinerApp:
         self.final_tree_scroll_x.config(command=self.final_tree.xview)
         
     def create_review_tab(self):
-        """Create the review cleaned data tab"""
+        """Create the review and rename columns tab"""
         review_frame = ctk.CTkFrame(self.review_tab)
         review_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
         # Instructions
         instructions = ctk.CTkLabel(
             review_frame,
-            text="Step 4: Review cleaned data\n• Check the address cleaning results\n• Verify the new cleaned address column\n• Review the apartment indicator column",
+            text="Step 2: Review and Rename Columns\n• Select datasets to preview\n• Review column names and data\n• Standardize column names across datasets\n• Ensure consistency before joining",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -470,14 +484,21 @@ class DataJoinerApp:
         
         ctk.CTkLabel(self.column_edit_frame, text="Edit Column Names:", font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=10, pady=10)
         
+        # Column selector
         self.column_selector = ctk.CTkComboBox(self.column_edit_frame, values=[], command=self.on_column_select)
         self.column_selector.pack(side="left", padx=10, pady=10)
-        
-        self.new_column_name = ctk.CTkEntry(self.column_edit_frame, placeholder_text="New column name")
-        self.new_column_name.pack(side="left", padx=10, pady=10)
-        
-        update_btn = ctk.CTkButton(self.column_edit_frame, text="Update", command=self.update_column_name)
-        update_btn.pack(side="left", padx=10, pady=10)
+
+        # New name entry
+        self.new_name_entry = ctk.CTkEntry(self.column_edit_frame, placeholder_text="New column name")
+        self.new_name_entry.pack(side="left", padx=10, pady=10)
+
+        # Update button
+        self.update_column_btn = ctk.CTkButton(self.column_edit_frame, text="Update Column Name", command=self.update_column_name)
+        self.update_column_btn.pack(side="left", padx=10, pady=10)
+
+        # Add button to update dataset selector
+        self.refresh_btn = ctk.CTkButton(selector_frame, text="Refresh Dataset List", command=self.update_dataset_selector)
+        self.refresh_btn.pack(side="left", padx=10, pady=10)
         
     def create_export_tab(self):
         """Create the export tab"""
@@ -660,8 +681,13 @@ class DataJoinerApp:
         values = list(self.datasets.keys())
         self.dataset_selector.configure(values=values)
         if values:
-            self.dataset_selector.set(values[0])
-            self.on_dataset_select(values[0])
+            # Only set if not already set to a valid value
+            current = self.dataset_selector.get()
+            if current not in values:
+                self.dataset_selector.set(values[0])
+                self.on_dataset_select(values[0])
+            else:
+                self.on_dataset_select(current)
     
     def add_dataset_info(self):
         selected_indices = self.dataset_listbox.curselection()
@@ -745,19 +771,20 @@ class DataJoinerApp:
         if len(columns) > 0:
             self.column_selector.set(columns[0])
     
+
     def on_column_select(self, column_name):
-        self.new_column_name.delete(0, tk.END)
-        self.new_column_name.insert(0, column_name)
-    
+        self.new_name_entry.delete(0, tk.END)
+        self.new_name_entry.insert(0, column_name)
+
     def update_column_name(self):
         dataset_name = self.dataset_selector.get()
         old_name = self.column_selector.get()
-        new_name = self.new_column_name.get().strip()
-        
+        new_name = self.new_name_entry.get().strip()
+
         if not dataset_name or not old_name or not new_name:
             messagebox.showwarning("Warning", "Please select dataset and column, and enter new name!")
             return
-        
+
         if dataset_name in self.datasets:
             self.datasets[dataset_name] = self.datasets[dataset_name].rename(columns={old_name: new_name})
             self.display_dataframe(self.datasets[dataset_name])
@@ -944,6 +971,31 @@ class DataJoinerApp:
         
         if self.combined_data.columns.empty or address_column not in self.combined_data.columns:
             messagebox.showerror("Error", f"Column '{address_column}' not found in data!")
+            return
+            
+        try:
+            # Store original data before cleaning
+            self.pre_cleaned_data = self.combined_data.copy()
+            
+            # Perform the cleaning
+            self.cleaned_data = self.clean_address_column(self.combined_data[address_column])
+            
+            # Set cleaning status
+            self.address_cleaning_done = True
+            
+            # Update the preview
+            self.display_dataframe_in_tree(self.clean_preview_tree, self.cleaned_data)
+            
+            # Enable next step
+            self.additional_dataset_btn.configure(state="normal")
+            
+            messagebox.showinfo("Success", "Address cleaning completed successfully!")
+            
+        except Exception as e:
+            self.address_cleaning_done = False
+            error_msg = f"Failed to clean address data: {str(e)}"
+            print(f"Cleaning error: {error_msg}")
+            messagebox.showerror("Error", error_msg)
             return
         
         try:

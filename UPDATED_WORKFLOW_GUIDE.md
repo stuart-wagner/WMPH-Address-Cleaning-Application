@@ -11,10 +11,17 @@ The Data Joiner application has been completely updated to follow a specific 7-s
 - **Features**:
   - Load Excel (.xlsx, .xls) or CSV files
   - Add time period and service information for each dataset
-  - Review and adjust column names if needed
   - Remove datasets if necessary
 
-### Step 2: Join & Preview
+### Step 2: Review & Rename
+- **Purpose**: Review loaded datasets and standardize column names
+- **Features**:
+  - Preview each loaded dataset
+  - Rename columns for consistency across datasets
+  - Verify data structure and content
+  - Ensure column names match across datasets
+
+### Step 3: Join & Preview
 - **Purpose**: Join all datasets and preview the combined result
 - **Features**:
   - All datasets are stacked together (concatenated)

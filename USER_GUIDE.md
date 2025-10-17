@@ -27,7 +27,17 @@ Data Joiner is a user-friendly desktop application that helps you combine multip
 3. If your Excel file has multiple sheets, choose the correct sheet
 4. The application will automatically detect and skip dummy rows
 
-### Step 2: Add Dataset Information
+### Step 2: Review and Rename Columns
+1. Go to the **"Review & Rename"** tab
+2. Select each dataset from the list
+3. Preview the data structure
+4. Use the column renaming tool:
+   - Select columns that need standardization
+   - Enter the desired column names
+   - Click "Update" to apply changes
+5. Ensure column names match across all datasets
+
+### Step 3: Add Dataset Information
 1. Select a dataset from the list
 2. Enter the **Time Period** (e.g., "2023 Q1", "Jan-Mar 2023")
 3. Enter the **Service** (e.g., "Customer Support", "Sales", "Marketing")
