@@ -242,6 +242,14 @@ class DataJoinerApp:
         )
         join_btn.pack(pady=10)
         
+        # Debug / summary label to show per-dataset counts and combined shape
+        self.join_summary_label = ctk.CTkLabel(join_frame, text="", font=ctk.CTkFont(size=12), justify="left")
+        self.join_summary_label.pack(fill="x", padx=10, pady=(0,10))
+
+        # Debug save button to write combined dataframe to disk for inspection
+        self.save_debug_btn = ctk.CTkButton(join_frame, text="Save Combined CSV (debug)", command=self.save_combined_debug)
+        self.save_debug_btn.pack(pady=(0,10))
+
         # Data preview
         self.join_preview_frame = ctk.CTkFrame(join_frame)
         self.join_preview_frame.pack(fill="both", expand=True, pady=10)
@@ -798,11 +806,12 @@ class DataJoinerApp:
             combined_dfs = []
             
             for name, df in self.datasets.items():
+                # If dataset_info missing, supply default metadata but record a warning
                 if name not in self.dataset_info:
-                    print(f"Warning: No info found for dataset '{name}', skipping...")
-                    continue
-                    
-                info = self.dataset_info[name]
+                    print(f"Warning: No info found for dataset '{name}', using default metadata")
+                    info = {'time_period': 'Unknown', 'service': 'Unknown'}
+                else:
+                    info = self.dataset_info[name]
                 
                 # Create a copy of the dataframe
                 df_copy = df.copy()
@@ -916,14 +925,10 @@ class DataJoinerApp:
         
         try:
             # Check if all datasets have required info
-            missing_info = []
-            for name in self.datasets.keys():
-                if name not in self.dataset_info:
-                    missing_info.append(name)
-            
+            missing_info = [name for name in self.datasets.keys() if name not in self.dataset_info]
             if missing_info:
-                messagebox.showwarning("Warning", f"Please add time period and service info for: {', '.join(missing_info)}")
-                return
+                # Warn the user but proceed using default metadata for missing datasets
+                messagebox.showwarning("Warning", f"Using default metadata for: {', '.join(missing_info)}")
             
             # Combine datasets
             self.combined_data = self.combine_datasets()
@@ -934,6 +939,32 @@ class DataJoinerApp:
             
             # Display preview
             self.display_dataframe_in_tree(self.join_tree, self.combined_data)
+            # Debug info: rows per dataset and combined shape
+            try:
+                per_ds = {name: len(df) for name, df in self.datasets.items()}
+                combined_shape = self.combined_data.shape if self.combined_data is not None else (0,0)
+                summary_lines = [f"Datasets included: {len(self.datasets)}"]
+                for k,v in per_ds.items():
+                    summary_lines.append(f" - {k}: {v} rows")
+                summary_lines.append(f"Combined shape: {combined_shape[0]} rows x {combined_shape[1]} cols")
+                summary_text = "\n".join(summary_lines)
+                print(summary_text)
+                try:
+                    self.join_summary_label.configure(text=summary_text)
+                except Exception:
+                    pass
+            except Exception as e:
+                print(f"Error building join summary: {e}")
+            # Mark datasets joined
+            self.datasets_joined = True
+            # Ensure address selector updated
+            column_list = list(self.combined_data.columns)
+            try:
+                self.address_column_selector.configure(values=column_list)
+                if len(column_list) > 0:
+                    self.address_column_selector.set(column_list[0])
+            except Exception:
+                pass
             
             # Update address column selector
             column_list = list(self.combined_data.columns)
@@ -957,6 +988,25 @@ class DataJoinerApp:
         if self.combined_data is not None and not self.combined_data.columns.empty and column_name in self.combined_data.columns:
             # Update the address column selector with available columns
             self.address_column_selector.set(column_name)
+
+    def save_combined_debug(self):
+        """Save the combined dataframe to CSV for debugging purposes"""
+        if self.combined_data is None:
+            messagebox.showwarning("Warning", "No combined data to save. Please run 'Join Datasets' first.")
+            return
+        try:
+            default_name = f"combined_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            save_path = filedialog.asksaveasfilename(defaultextension=".csv", initialfile=default_name, filetypes=[("CSV files","*.csv"), ("All files","*.*")])
+            if not save_path:
+                return
+            # Ensure it's a DataFrame
+            if hasattr(self.combined_data, 'to_csv'):
+                self.combined_data.to_csv(save_path, index=False)
+                messagebox.showinfo("Saved", f"Combined CSV saved to:\n{save_path}")
+            else:
+                messagebox.showerror("Error", "Combined data is not a valid DataFrame.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save combined CSV: {e}")
     
     def clean_address_data(self):
         """Clean address data and create apartment indicator"""
