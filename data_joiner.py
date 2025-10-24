@@ -15,7 +15,7 @@ class DataJoinerApp:
         
         # Create main window
         self.root = ctk.CTk()
-        self.root.title("WMCHD Client-Services Data Cleaner - Joining and Address Cleaning")
+        self.root.title("WMPH Client-Services Data Cleaner - Joining and Address Cleaning")
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -95,7 +95,7 @@ class DataJoinerApp:
         # Title
         title_label = ctk.CTkLabel(
             main_frame, 
-            text="WMCHD Client-Services Data Cleaner", 
+            text="WMPH Client-Services Data Cleaner", 
             font=ctk.CTkFont(size=28, weight="bold")
         )
         title_label.pack(pady=(20, 10))

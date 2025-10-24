@@ -31,20 +31,23 @@ Run the application from your terminal:
    ```bash
    python data_joiner.py
    ```
+## The 9-Step Workflow
 
-## The 8-Step Workflow
+The application guides users through a comprehensive 9-step process:
 
 1.  **Load Data**: Load one or more source datasets. For each file, assign `Month`, `Year`, and `Service` metadata.
-2.  **Review & Rename**: Preview each dataset and rename columns as needed to ensure they are consistent across all files.
+2.  **Review & Rename**: Preview each dataset and rename columns as needed to ensure consistency across all files.
 3.  **Join & Preview**: All loaded datasets are stacked (concatenated) into a single large table. The metadata from Step 1 is added as new columns.
-4.  **Address Cleaning**: Select the column containing address data. The application will:
-    - Create a `new_{address_column}` with cleaned addresses.
-    - Create a `{address_column}_auto_cleaned` column indicating if a high-confidence cleaning was performed.
-    - Create a `{address_column}_may_have_word` column to flag rows that might need manual review.
-5.  **Additional Dataset**: Load a second, separate dataset that you want to use for data enrichment.
-6.  **Summarize Data**: Choose a column from the additional dataset and summarize it. This creates a new table with unique values and their counts.
-7.  **Left Join**: Merge the main cleaned dataset (from Step 4) with the summarized dataset (from Step 6) using a left join.
-8.  **Export**: Save the final, merged, and cleaned dataset to an Excel or CSV file.
+4.  **Deduplicate by Date**: Group data by a selected column and keep only the most recent record based on `Year` and `Month`.
+5.  **Address Cleaning**: Select the column containing address data. The application will:
+    -   Create a `new_{address_column}` with cleaned addresses (removing high-confidence unit info).
+    -   Create a `{address_column}_auto_cleaned` column indicating if a high-confidence cleaning was performed.
+    -   Create a `{address_column}_may_have_word` column to flag rows with ambiguous patterns (e.g., `#`, `PO BOX`, number patterns) for manual review, without altering them.
+    -   All cleaning and flagging rules are fully customizable through the `⚙️ Settings` panel.
+6.  **Additional Dataset**: Load a second, separate dataset that you want to use for data enrichment.
+7.  **Summarize Data**: Choose a column from the additional dataset and summarize it (e.g., to get counts of unique values).
+8.  **Left Join**: Merge the main cleaned dataset (from Step 5) with the summarized dataset (from Step 7) using a left join.
+9.  **Export**: Save the final, merged, and cleaned dataset to an Excel or CSV file.
 
 ## Requirements
 
@@ -56,9 +59,10 @@ Run the application from your terminal:
 ## Troubleshooting
 
 - **File Loading Issues**: Ensure files are not corrupted and have proper headers
-- **Address Cleaning Not Working**: If addresses aren't being cleaned or flagged as expected, check the `⚙️ Settings` panel to ensure the keywords and patterns match your data.
+- **Address Cleaning Not Working**: If addresses aren't being cleaned or flagged as expected, check the `⚙️ Settings` panel to ensure the keywords and patterns match your data. The cleaning rules are loaded from `settings.json`.
 - **Join Errors**: Ensure the columns you select for joining in Step 7 have matching data types and formats.
 
 ## Support
 
 This application is designed to be user-friendly for non-technical users. The interface provides clear instructions and helpful error messages.
+For a more detailed user guide, refer to `UPDATED_WORKFLOW_GUIDE.md`.

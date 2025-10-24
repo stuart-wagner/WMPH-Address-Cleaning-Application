@@ -1,16 +1,22 @@
 # Data Joiner Application - Project Summary
 
 ## 🎯 Project Overview
-A modern, user-friendly desktop application for combining multiple datasets with time period and service information. The application automatically handles dummy rows and provides an intuitive interface for non-technical users.
+A modern, user-friendly desktop application for combining multiple datasets, performing advanced address cleaning, and enriching data. It automatically handles dummy rows and provides an intuitive, step-by-step workflow for non-technical users.
 
 ## ✅ Features Implemented
 
 ### Core Functionality
 - **Multi-format Support**: Excel (.xlsx, .xls) and CSV files
 - **Smart Data Detection**: Automatically detects and skips dummy rows (titles, descriptions)
-- **Time & Service Tracking**: Add metadata for each dataset (time period, service type)
+- **Metadata Tracking**: Add `Month`, `Year`, and `Service` metadata for each dataset
 - **Data Preview**: Review and edit column names before joining
-- **Flexible Joining**: Multiple join methods (Concatenate, Inner Join, Outer Join)
+- **Dataset Concatenation**: Stacks multiple datasets into a single table.
+- **Deduplication by Date**: Keeps the most recent record for unique entries based on `Year` and `Month`.
+- **Advanced Address Cleaning**:
+  - Auto-cleans high-confidence unit identifiers (APT, UNIT, SUITE).
+  - Flags ambiguous patterns (#, PO BOX, number patterns) for review.
+  - Configurable cleaning rules via `settings.json`.
+- **Data Enrichment**: Load, summarize, and left-join an additional dataset.
 - **Export Options**: Export combined data to Excel or CSV
 
 ### User Interface
@@ -23,7 +29,8 @@ A modern, user-friendly desktop application for combining multiple datasets with
 - **Automatic Dummy Row Detection**: Heuristic-based detection of non-data rows
 - **Column Management**: Rename columns for proper alignment
 - **Data Validation**: Error handling and user feedback
-- **Memory Efficient**: Handles large datasets with preview limitations
+- **Configurable Settings**: External `settings.json` for address cleaning rules.
+- **Memory Efficient**: Handles large datasets with preview limitations.
 
 ## 📁 Project Structure
 
@@ -190,5 +197,3 @@ The Data Joiner application successfully meets all requirements:
 - ✅ Includes comprehensive testing and documentation
 
 The application is ready for production use and provides a solid foundation for future enhancements.
-
-

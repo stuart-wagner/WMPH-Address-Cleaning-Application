@@ -1,74 +1,80 @@
 # Data Joiner - Updated Workflow Guide
 
-## 🎯 New 7-Step Workflow
+## 🎯 New 9-Step Workflow
 
-The Data Joiner application has been completely updated to follow a specific 7-step workflow for advanced dataset processing with address cleaning capabilities.
+The Data Joiner application has been completely updated to follow a specific 9-step workflow for advanced dataset processing, including robust address cleaning and data enrichment capabilities.
 
 ## 📋 Step-by-Step Process
 
 ### Step 1: Load Data
 - **Purpose**: Load multiple datasets and assign time period/service information
 - **Features**:
-  - Load Excel (.xlsx, .xls) or CSV files
-  - Add time period and service information for each dataset
-  - Remove datasets if necessary
+  - Load Excel (.xlsx, .xls) or CSV files.
+  - Add `Month`, `Year`, and `Service` metadata for each dataset.
+  - Remove datasets if necessary.
 
 ### Step 2: Review & Rename
 - **Purpose**: Review loaded datasets and standardize column names
 - **Features**:
-  - Preview each loaded dataset
-  - Rename columns for consistency across datasets
-  - Verify data structure and content
-  - Ensure column names match across datasets
+  - Preview each loaded dataset.
+  - Rename columns for consistency across datasets.
+  - Verify data structure and content.
+  - Ensure column names match across datasets.
 
 ### Step 3: Join & Preview
 - **Purpose**: Join all datasets and preview the combined result
 - **Features**:
-  - All datasets are stacked together (concatenated)
-  - Time period and service information is added to each row
-  - Preview the combined dataset before proceeding
-  - Verify data structure and completeness
+  - All datasets are stacked together (concatenated).
+  - `Month`, `Year`, and `Service` metadata is added to each row.
+  - Preview the combined dataset before proceeding.
+  - Verify data structure and completeness.
 
-### Step 3: Address Cleaning
+### Step 4: Deduplicate by Date
+- **Purpose**: Remove duplicate records, keeping only the most recent entry.
+- **Features**:
+  - Select a column to group by (e.g., Customer ID, Address).
+  - The application identifies and keeps the record with the latest `Year` and `Month` for each unique entry in the selected column.
+  - Preview the deduplicated dataset.
+
+### Step 5: Address Cleaning
 - **Purpose**: Clean address data and create apartment indicators
 - **Features**:
-  - Select the address column to clean
-  - Automatically detect apartment/unit information
-  - Remove apartment information from addresses
-  - Create indicator variable for potential apartment entries
-  - Configurable apartment detection rules
+  - Select the address column to clean.
+  - Automatically detect and remove high-confidence unit identifiers (e.g., 'APT', 'UNIT', 'SUITE').
+  - Create a new column (`new_[original_column_name]`) with the cleaned addresses.
+  - Create an indicator column (`[original_column_name]_auto_cleaned`) showing if auto-cleaning occurred.
+  - Flag addresses with ambiguous patterns (e.g., '#', 'PO BOX', number patterns) for manual review, creating a separate indicator column (`[original_column_name]_may_have_word`).
+  - All cleaning and flagging rules are fully configurable via the `⚙️ Settings` panel.
 
-### Step 4: Review Cleaned Data
+### Step 6: Additional Dataset
+- **Purpose**: Load a secondary dataset for data enrichment.
+- **Features**:
+  - Load a new Excel or CSV dataset.
+  - This dataset will be summarized in the next step before being joined with your main data.
+  - Preview the loaded additional dataset.
+
+### Step 7: Summarize Data
+- **Purpose**: Summarize the additional dataset by a chosen column.
+- **Features**:
+  - Select a column from the additional dataset (e.g., an address column).
+  - The application will count the occurrences of each unique value in that column.
+  - This creates a new, summarized table (e.g., `Address | Count`).
+  - Preview the summarized data.
+
+### Step 8: Left Join
+- **Purpose**: Merge the main cleaned dataset with the summarized additional data.
+- **Features**:
+  - Select a join key column from your main (cleaned) dataset.
+  - Select a corresponding join key column from the summarized additional dataset.
+  - Performs a **left join**, meaning all rows from your main dataset are kept, and matching information from the summarized dataset is added.
+  - Preview the final merged dataset.
+
+### Step 9: Export
 - **Purpose**: Review the results of address cleaning
 - **Features**:
-  - Check the cleaned address column
-  - Verify the apartment indicator column
-  - Ensure cleaning was performed correctly
-  - Make adjustments if needed
-
-### Step 5: Additional Dataset
-- **Purpose**: Load and join an additional dataset
-- **Features**:
-  - Load a new dataset to join with cleaned data
-  - Select join variables from both datasets
-  - Perform left join (keeps all cleaned data, adds matching additional data)
-  - Preview the merged result
-
-### Step 6: Final Review
-- **Purpose**: Review the complete merged dataset
-- **Features**:
-  - Check the final dataset with all joins
-  - Verify data quality and completeness
-  - Ensure all processing steps were successful
-  - Prepare for export
-
-### Step 7: Export
-- **Purpose**: Export the final processed dataset
-- **Features**:
-  - Export to Excel (.xlsx) format
-  - Export to CSV format
-  - Save the complete processed data
-  - Maintain all original and processed columns
+  - Export the final, processed dataset to either Excel (.xlsx) or CSV format.
+  - All original and newly created columns are maintained in the export.
+  - Save your complete processed data to a location of your choice.
 
 ## 🔧 Advanced Address Cleaning Features
 
@@ -136,16 +142,18 @@ Access the settings window by clicking the "⚙️ Settings" button in the main 
 
 ### Quick Start
 1. **Run Application**: `python data_joiner.py` or double-click `run_app.bat`
-2. **Load Datasets**: Use Step 1 to load your data files
-3. **Join Data**: Use Step 2 to combine all datasets
-4. **Clean Addresses**: Use Step 3 to clean address data
-5. **Review Results**: Use Step 4 to check cleaning results
-6. **Add More Data**: Use Step 5 to join additional datasets
-7. **Final Review**: Use Step 6 to review complete dataset
-8. **Export**: Use Step 7 to save your processed data
+2. **Load Datasets**: Use Step 1 to load your data files and assign metadata.
+3. **Review & Rename**: Use Step 2 to standardize column names.
+4. **Join & Preview**: Use Step 3 to combine all datasets.
+5. **Deduplicate**: Use Step 4 to remove duplicate records.
+6. **Clean Addresses**: Use Step 5 to clean address data.
+7. **Load Additional Data**: Use Step 6 to load a dataset for enrichment.
+8. **Summarize Data**: Use Step 7 to summarize the additional dataset.
+9. **Left Join**: Use Step 8 to merge the main data with the summarized data.
+10. **Export**: Use Step 9 to save your processed data.
 
 ### Sample Data
-The application includes sample data in the `demo_data/` folder:
+The application includes sample data in the `demo_data/` folder (generated by `demo_usage.py`):
 - `customer_support_q1_2023.xlsx/csv`
 - `sales_q2_2023.xlsx/csv`
 - `marketing_q3_2023.xlsx/csv`
@@ -153,7 +161,7 @@ The application includes sample data in the `demo_data/` folder:
 ## 🧪 Testing
 
 ### Automated Tests
-Run `python test_new_workflow.py` to test all functionality:
+Run `python test_new_workflow.py` and `test_functionality.py` to test all functionality:
 - Address cleaning accuracy
 - Settings management
 - Complete workflow integration
@@ -274,5 +282,3 @@ Original Datasets
 The updated Data Joiner application provides a comprehensive solution for advanced dataset processing with specialized address cleaning capabilities. The 7-step workflow ensures a systematic approach to data processing, while the configurable settings allow for customization to specific needs.
 
 The application is production-ready and provides a solid foundation for future enhancements while meeting all current requirements for data joining, address cleaning, and dataset merging.
-
-
