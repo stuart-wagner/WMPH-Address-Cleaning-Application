@@ -9,21 +9,23 @@ class Colors:
 
     # --- Standard Action Colors ---
     # Used for primary "go" actions like exporting
-    GO_GREEN = "#2CC985"
-    GO_GREEN_HOVER = "#28B477"
+    GO_GREEN = "#00AE4C" # Primary green for success/export actions
+    GO_GREEN_HOVER = "#008C3D" # Darker green for hover state
 
-    # Used for alternative actions
-    ACTION_BLUE = "#3B8ED0"
-    ACTION_BLUE_HOVER = "#36719F"
+    # --- Action Blue Palette ---
+    ACTION_BLUE = "#4A53A5"  # Main blue for buttons, selected tabs
+    ACTION_BLUE_HOVER = "#5A64B4" # Slightly lighter blue for hover states
+    ACTION_BLUE_UNSELECTED = "#7A82C0" # Lighter blue for unselected tabs
 
     # --- Destructive/Warning Colors ---
-    # Used for actions that remove or delete data
-    DESTRUCTIVE_RED = "#D32F2F"
-    DESTRUCTIVE_RED_HOVER = "#B71C1C"
+    # Used for actions that remove or delete data (currently orange as per user's last change)
+    DESTRUCTIVE_RED = "#F7971D" # Orange for destructive actions (as per user's last change)
+    DESTRUCTIVE_RED_HOVER = "#D47B1A" # Darker orange for hover state
 
     # Used for informational warnings or notes
     WARNING_ORANGE = "#E67E22"
 
     # --- Greyscale for Text and Backgrounds ---
-    TEXT_PRIMARY = "#242424"
+    TEXT_PRIMARY = "#2F2F2F"#242424"
     TEXT_SECONDARY = "#6E6E6E"
+    

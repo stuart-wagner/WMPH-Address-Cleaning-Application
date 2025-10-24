@@ -12,8 +12,8 @@ from colors import Colors
 class DataJoinerApp:
     def __init__(self):
         # Set appearance mode and color theme
-        ctk.set_appearance_mode("light")
-        ctk.set_default_color_theme("blue")
+        ctk.set_appearance_mode("light") # Keep light mode
+        # Removed ctk.set_default_color_theme("blue") to allow explicit widget colors to take precedence
         
         # Create main window
         self.root = ctk.CTk()
@@ -105,7 +105,13 @@ class DataJoinerApp:
         subtitle_label.pack(pady=(0, 30))
         
         # Create notebook for tabs
-        self.notebook = ctk.CTkTabview(main_frame)
+        self.notebook = ctk.CTkTabview(
+            main_frame,
+            segmented_button_selected_color=Colors.ACTION_BLUE,
+            segmented_button_unselected_color=Colors.ACTION_BLUE_UNSELECTED,
+            segmented_button_selected_hover_color=Colors.ACTION_BLUE_HOVER,
+            segmented_button_unselected_hover_color=Colors.ACTION_BLUE_HOVER
+        )
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Step 1: Load Data Tab
@@ -151,7 +157,9 @@ class DataJoinerApp:
             text="⚙️ Settings",
             command=self.open_settings,
             width=100,
-            height=30
+            height=30,
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         settings_btn.pack(side="right", padx=10, pady=10)
         
@@ -175,7 +183,9 @@ class DataJoinerApp:
             text="Load Dataset",
             command=self.load_dataset,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         load_btn.pack(pady=10)
         
@@ -236,7 +246,9 @@ class DataJoinerApp:
             self.info_frame,
             text="Add Info",
             command=self.add_dataset_info,
-            width=100
+            width=100,
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         add_info_btn.grid(row=0, column=6, padx=10, pady=10)
         
@@ -246,7 +258,8 @@ class DataJoinerApp:
             text="Remove Selected Dataset",
             command=self.remove_dataset,
             fg_color=Colors.DESTRUCTIVE_RED,
-            hover_color=Colors.DESTRUCTIVE_RED_HOVER
+            hover_color=Colors.DESTRUCTIVE_RED_HOVER,
+            text_color=Colors.TEXT_PRIMARY
         )
         remove_btn.pack(pady=10)
     
@@ -270,7 +283,9 @@ class DataJoinerApp:
             text="Join Datasets",
             command=self.join_datasets,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         join_btn.pack(pady=10)
         
@@ -279,11 +294,18 @@ class DataJoinerApp:
         self.join_summary_label.pack(fill="x", padx=10, pady=(0,10))
 
         # Save Combined CSV button
-        self.save_csv_btn = ctk.CTkButton(join_frame, text="Save Combined CSV", command=self.save_combined_debug)
+        self.save_csv_btn = ctk.CTkButton(
+            join_frame, 
+            text="Save Combined CSV", 
+            command=self.save_combined_debug,
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER)
         self.save_csv_btn.pack(pady=(0,5))
 
         # Save Combined XLSX button
-        self.save_xlsx_btn = ctk.CTkButton(join_frame, text="Save Combined XLSX", command=self.save_combined_xlsx)
+        self.save_xlsx_btn = ctk.CTkButton(join_frame, text="Save Combined XLSX", command=self.save_combined_xlsx,
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER)
         self.save_xlsx_btn.pack(pady=(0,10))
 
         # Data preview
@@ -329,7 +351,13 @@ class DataJoinerApp:
         self.deduplicate_column_selector.pack(side="left", padx=10, pady=10)
 
         # Deduplicate button
-        dedup_btn = ctk.CTkButton(dedup_frame, text="Deduplicate by Date", command=self.deduplicate_by_date_action, height=40, font=ctk.CTkFont(size=14, weight="bold"))
+        dedup_btn = ctk.CTkButton(
+            dedup_frame, 
+            text="Deduplicate by Date", 
+            command=self.deduplicate_by_date_action, 
+            height=40, font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER)
         dedup_btn.pack(pady=10)
 
         # Results preview
@@ -375,16 +403,27 @@ class DataJoinerApp:
             text="Clean Address Data",
             command=self.clean_address_data,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         clean_btn.pack(pady=10)
         
         # Debug save buttons
         debug_frame = ctk.CTkFrame(clean_frame)
         debug_frame.pack(pady=(0, 10))
-        save_cleaned_csv_btn = ctk.CTkButton(debug_frame, text="Save Cleaned CSV (Debug)", command=self.save_cleaned_debug_csv)
+        save_cleaned_csv_btn = ctk.CTkButton(
+            debug_frame, 
+            text="Save Cleaned CSV (Debug)", 
+            command=self.save_cleaned_debug_csv,
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER)
         save_cleaned_csv_btn.pack(side="left", padx=5)
-        save_cleaned_xlsx_btn = ctk.CTkButton(debug_frame, text="Save Cleaned XLSX (Debug)", command=self.save_cleaned_debug_xlsx)
+        save_cleaned_xlsx_btn = ctk.CTkButton(
+            debug_frame, text="Save Cleaned XLSX (Debug)", 
+            command=self.save_cleaned_debug_xlsx,
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER)
         save_cleaned_xlsx_btn.pack(side="left", padx=5)
 
         # Results preview
@@ -429,7 +468,9 @@ class DataJoinerApp:
             text="Load Additional Dataset",
             command=self.load_additional_dataset,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         load_additional_btn.pack(pady=10)
         
@@ -476,7 +517,13 @@ class DataJoinerApp:
         self.summarize_column_selector.pack(side="left", padx=10, pady=10)
 
         # Summarize button
-        summarize_btn = ctk.CTkButton(summarize_frame, text="Summarize Data", command=self.summarize_additional_data_action, height=40, font=ctk.CTkFont(size=14, weight="bold"))
+        summarize_btn = ctk.CTkButton(
+            summarize_frame, 
+            text="Summarize Data", 
+            command=self.summarize_additional_data_action, 
+            height=40, font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER)
         summarize_btn.pack(pady=10)
 
         # Results preview
@@ -525,7 +572,9 @@ class DataJoinerApp:
             text="Join Datasets",
             command=self.join_additional_dataset,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         join_additional_btn.pack(pady=10)
         
@@ -535,7 +584,9 @@ class DataJoinerApp:
             text="Refresh Preview",
             command=self.refresh_final_preview,
             height=40,
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         refresh_btn.pack(pady=10)
         
@@ -621,11 +672,21 @@ class DataJoinerApp:
         self.new_name_entry.pack(side="left", padx=10, pady=10)
 
         # Update button
-        self.update_column_btn = ctk.CTkButton(self.column_edit_frame, text="Update Column Name", command=self.update_column_name)
+        self.update_column_btn = ctk.CTkButton(
+            self.column_edit_frame, 
+            text="Update Column Name", 
+            command=self.update_column_name,
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER)
         self.update_column_btn.pack(side="left", padx=10, pady=10)
 
         # Add button to update dataset selector
-        self.refresh_btn = ctk.CTkButton(selector_frame, text="Refresh Dataset List", command=self.update_dataset_selector)
+        self.refresh_btn = ctk.CTkButton(
+            selector_frame, 
+            text="Refresh Dataset List", 
+            command=self.update_dataset_selector,
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER)
         self.refresh_btn.pack(side="left", padx=10, pady=10)
         
     def create_export_tab(self):
@@ -928,7 +989,7 @@ class DataJoinerApp:
         self.new_name_entry.insert(0, column_name)
 
     def update_column_name(self):
-        dataset_name = self.dataset_selector.get()
+        dataset_name = self.dataset_selector.get() # This is a primary action. The default blue theme is probably fine, but I can make it explicit. Let's use `ACTION_BLUE`.
         old_name = self.column_selector.get()
         new_name = self.new_name_entry.get().strip()
 
@@ -1576,50 +1637,50 @@ class DataJoinerApp:
         """Open settings window"""
         settings_window = ctk.CTkToplevel(self.root)
         settings_window.title("Settings")
-        settings_window.geometry("600x500")
+        settings_window.geometry("600x550")
         settings_window.transient(self.root)
         settings_window.grab_set()
         
-        # Main frame
-        main_frame = ctk.CTkFrame(settings_window)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
         # Title
-        title_label = ctk.CTkLabel(main_frame, text="Address Cleaning Settings", font=ctk.CTkFont(size=20, weight="bold"))
-        title_label.pack(pady=(0, 20))
+        title_label = ctk.CTkLabel(settings_window, text="Address Cleaning Settings", font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.pack(pady=(20, 10))
+        
+        # Create a scrollable frame to hold all settings content
+        scrollable_frame = ctk.CTkScrollableFrame(settings_window)
+        scrollable_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
         
         # Apartment words
-        apt_frame = ctk.CTkFrame(main_frame)
+        apt_frame = ctk.CTkFrame(scrollable_frame)
         apt_frame.pack(fill="x", pady=10)
         
         ctk.CTkLabel(apt_frame, text="Apartment Words (one per line):", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
         
-        self.apt_words_text = ctk.CTkTextbox(apt_frame, height=100)
+        self.apt_words_text = ctk.CTkTextbox(apt_frame, height=120)
         self.apt_words_text.pack(fill="x", padx=10, pady=(0, 10))
         self.apt_words_text.insert("1.0", "\n".join(self.settings["apartment_words"]))
         
         # PO Box words
-        po_frame = ctk.CTkFrame(main_frame)
+        po_frame = ctk.CTkFrame(scrollable_frame)
         po_frame.pack(fill="x", pady=10)
         
         ctk.CTkLabel(po_frame, text="PO Box Words (one per line):", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
         
-        self.po_words_text = ctk.CTkTextbox(po_frame, height=80)
+        self.po_words_text = ctk.CTkTextbox(po_frame, height=100)
         self.po_words_text.pack(fill="x", padx=10, pady=(0, 10))
         self.po_words_text.insert("1.0", "\n".join(self.settings["po_box_words"]))
         
         # Number patterns
-        num_frame = ctk.CTkFrame(main_frame)
+        num_frame = ctk.CTkFrame(scrollable_frame)
         num_frame.pack(fill="x", pady=10)
         
         ctk.CTkLabel(num_frame, text="Number Patterns (regex, one per line):", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
         
-        self.num_patterns_text = ctk.CTkTextbox(num_frame, height=80)
+        self.num_patterns_text = ctk.CTkTextbox(num_frame, height=100)
         self.num_patterns_text.pack(fill="x", padx=10, pady=(0, 10))
         self.num_patterns_text.insert("1.0", "\n".join(self.settings["number_patterns"]))
         
         # Buttons
-        button_frame = ctk.CTkFrame(main_frame)
+        button_frame = ctk.CTkFrame(scrollable_frame)
         button_frame.pack(fill="x", pady=20)
         
         save_btn = ctk.CTkButton(button_frame, text="Save", command=lambda: self.save_settings_from_window(settings_window))
