@@ -22,7 +22,7 @@ class DataJoinerApp:
         # Set window icon
         try:
             # Assuming the icon file is named 'app_icon.ico' and is in the same directory
-            self.root.iconbitmap('wmcphd logo.ico')
+            self.root.iconbitmap('wmph logo.ico')
         except Exception as e:
             print(f"Warning: Could not load application icon. {e}")
         
