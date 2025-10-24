@@ -3,6 +3,7 @@
     "APT",
     "APARTMENT",
     "UNIT",
+    "BADOOM",
     "U",
     "LOT",
     "SUITE",
@@ -12,8 +13,7 @@
     "FLOOR",
     "FL",
     "ROOM",
-    "RM",
-    "LAPTOP"
+    "RM"
   ],
   "po_box_words": [
     "PO BOX",

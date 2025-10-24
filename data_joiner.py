@@ -6,6 +6,8 @@ import os
 from datetime import datetime
 import json
 import re
+from default_settings import DefaultSettings
+from colors import Colors
 
 class DataJoinerApp:
     def __init__(self):
@@ -61,12 +63,7 @@ class DataJoinerApp:
     
     def load_settings(self):
         """Load settings from file or create default settings"""
-        default_settings = {
-            "apartment_words": ["APT", "APARTMENT", "UNIT", "U", "LOT", "SUITE", "STE", "BLDG", "BUILDING", "FLOOR", "FL", "ROOM", "RM"],
-            "po_box_words": ["PO BOX", "P.O. BOX", "POBOX", "P.O.BOX"],
-            "number_patterns": [r'\d+$', r'#\d+', r'\d+[A-Z]?$'],
-            "case_sensitive": False
-        }
+        default_settings = DefaultSettings.get_defaults()
         
         try:
             if os.path.exists(self.settings_file):
@@ -248,8 +245,8 @@ class DataJoinerApp:
             load_frame,
             text="Remove Selected Dataset",
             command=self.remove_dataset,
-            fg_color="red",
-            hover_color="darkred"
+            fg_color=Colors.DESTRUCTIVE_RED,
+            hover_color=Colors.DESTRUCTIVE_RED_HOVER
         )
         remove_btn.pack(pady=10)
     
@@ -656,7 +653,7 @@ class DataJoinerApp:
             settings_frame,
             text="Note: Make sure you have completed all previous steps (1-8) before exporting.",
             font=ctk.CTkFont(size=12),
-            text_color="orange"
+            text_color=Colors.WARNING_ORANGE
         )
         note_label.pack(pady=10)
         
@@ -674,8 +671,8 @@ class DataJoinerApp:
             command=self.export_excel,
             height=40,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="green",
-            hover_color="darkgreen"
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER
         )
         export_excel_btn.pack(side="left", padx=10, pady=10)
         
@@ -685,8 +682,8 @@ class DataJoinerApp:
             command=self.export_csv,
             height=40,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="blue",
-            hover_color="darkblue"
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.ACTION_BLUE_HOVER
         )
         export_csv_btn.pack(side="left", padx=10, pady=10)
         
@@ -1662,13 +1659,7 @@ class DataJoinerApp:
     
     def reset_settings(self):
         """Reset settings to default"""
-        default_settings = {
-            "apartment_words": ["APT", "APARTMENT", "UNIT", "U", "LOT", "SUITE", "STE", "BLDG", "BUILDING", "FLOOR", "FL", "ROOM", "RM"],
-            "po_box_words": ["PO BOX", "P.O. BOX", "POBOX", "P.O.BOX"],
-            "number_patterns": [r'\d+$', r'#\d+', r'\d+[A-Z]?$'],
-            "case_sensitive": False
-        }
-        
+        default_settings = DefaultSettings.get_defaults()
         self.settings = default_settings
         
         # Update text widgets
