@@ -15,20 +15,24 @@ def install_requirements():
         print("✓ All packages installed successfully!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"✗ Error installing packages: {e}")
+        print(f"✗ Error installing packages: {e}. Please ensure requirements.txt is present and valid.")
         return False
 
-def create_demo_data():
-    """Create demo data for testing"""
-    print("Creating demo data...")
-    try:
-        import demo_usage
-        demo_usage.create_demo_datasets()
-        print("✓ Demo data created successfully!")
-        return True
-    except Exception as e:
-        print(f"✗ Error creating demo data: {e}")
-        return False
+# Removed create_demo_data function as demo_usage.py is no longer part of the project.
+# If you wish to re-enable demo data creation, you will need to restore demo_usage.py
+# and uncomment the relevant sections.
+
+# def create_demo_data():
+#     """Create demo data for testing"""
+#     print("Creating demo data...")
+#     try:
+#         import demo_usage
+#         demo_usage.create_demo_datasets()
+#         print("✓ Demo data created successfully!")
+#         return True
+#     except Exception as e:
+#         print(f"✗ Error creating demo data: {e}")
+#         return False
 
 def main():
     """Main setup function"""
@@ -47,18 +51,16 @@ def main():
     if not install_requirements():
         return False
     
-    # Create demo data
-    if not create_demo_data():
-        return False
+    # Demo data creation has been removed.
+    # If you need demo data, you will have to create it manually or restore the demo_usage.py script.
     
     print("\n" + "=" * 50)
     print("Setup completed successfully!")
     print("=" * 50)
     print("\nTo run the application:")
     print("1. Double-click 'run_app.bat'")
-    print("2. Or run: python data_joiner.py")
-    print("\nDemo data is available in the 'demo_data' folder")
-    print("Read USER_GUIDE.md for detailed instructions")
+    print("2. Or run: `python data_joiner.py`")
+    print("\nFor detailed instructions, refer to `UPDATED_WORKFLOW_GUIDE.md`.")
     
     return True
 
@@ -66,4 +68,3 @@ if __name__ == "__main__":
     success = main()
     if not success:
         sys.exit(1)
-

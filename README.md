@@ -60,7 +60,7 @@ The application guides users through a comprehensive 9-step process:
 
 - **File Loading Issues**: Ensure files are not corrupted and have proper headers
 - **Address Cleaning Not Working**: If addresses aren't being cleaned or flagged as expected, check the `⚙️ Settings` panel to ensure the keywords and patterns match your data. The cleaning rules are loaded from `settings.json`.
-- **Join Errors**: Ensure the columns you select for joining in Step 7 have matching data types and formats.
+- **Join Errors**: Ensure the columns you select for joining in Step 8 have matching data types and formats.
 
 ## Support
 
