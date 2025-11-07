@@ -38,6 +38,7 @@ class DataJoinerApp:
         self.combined_data = None
         self.deduplicated_data = None
         self.cleaned_data = None
+        self.joined_additional_data = None # Data after left join, before deduplication
         self.final_data = None
         self.additional_dataset = None
         self.summarized_additional_data = None
@@ -46,7 +47,7 @@ class DataJoinerApp:
         self.datasets_joined = False
         self.data_deduplicated = False
         self.address_cleaning_done = False
-        self.additional_data_summarized = False
+        self.additional_data_summarized = False # Renamed from additional_join_done
         self.additional_join_done = False
         
         # Backup storage for reverting changes
@@ -126,28 +127,27 @@ class DataJoinerApp:
         self.join_tab = self.notebook.add("3. Join & Preview")
         self.create_join_tab()
         
-        # Step 4: Deduplicate by Date Tab
-        self.deduplicate_tab = self.notebook.add("4. Deduplicate by Date")
-        self.create_deduplicate_tab()
-        
-        # Step 5: Address Cleaning Tab
-        self.clean_tab = self.notebook.add("5. Address Cleaning")
+        # Step 4: Address Cleaning Tab (was 5)
+        self.clean_tab = self.notebook.add("4. Address Cleaning")
         self.create_clean_tab()
         
-        
-        # Step 6: Load Additional Dataset Tab
-        self.additional_tab = self.notebook.add("6. Additional Dataset")
+        # Step 5: Load Additional Dataset Tab (was 6)
+        self.additional_tab = self.notebook.add("5. Additional Dataset")
         self.create_additional_tab()
         
-        # Step 7: Summarize Data Tab
-        self.summarize_tab = self.notebook.add("7. Summarize Data")
+        # Step 6: Summarize Data Tab (was 7)
+        self.summarize_tab = self.notebook.add("6. Summarize Data")
         self.create_summarize_tab()
         
-        # Step 8: Final Review Tab
-        self.final_tab = self.notebook.add("8. Left Join")
+        # Step 7: Left Join Tab (was 8)
+        self.final_tab = self.notebook.add("7. Left Join")
         self.create_final_tab()
         
-        # Step 9: Export Tab
+        # Step 8: Deduplicate by Date Tab (was 4)
+        self.deduplicate_tab = self.notebook.add("8. Deduplicate by Date")
+        self.create_deduplicate_tab()
+        
+        # Step 9: Export Tab (remains 9)
         self.export_tab = self.notebook.add("9. Export")
         self.create_export_tab()
         
@@ -337,7 +337,7 @@ class DataJoinerApp:
 
         instructions = ctk.CTkLabel(
             dedup_frame,
-            text="Step 4: Keep only the most recent record for each unique entry in a selected column.",
+            text="Step 8: Keep only the most recent record for each unique entry in a selected column.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -382,7 +382,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             clean_frame,
-            text="Step 5: Clean address data\n• High-confidence words (e.g., 'APT', 'UNIT') are auto-cleaned.\n• Ambiguous patterns (e.g., '#', 'PO BOX') are flagged for review.",
+            text="Step 4: Clean address data\n• High-confidence words (e.g., 'APT', 'UNIT') are auto-cleaned.\n• Ambiguous patterns (e.g., '#', 'PO BOX') are flagged for review.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -456,7 +456,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             additional_frame,
-            text="Step 6: Load an additional dataset to enrich your data.\n• This dataset will be summarized in the next step before joining.",
+            text="Step 5: Load an additional dataset to enrich your data.\n• This dataset will be summarized in the next step before joining.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -503,7 +503,7 @@ class DataJoinerApp:
 
         instructions = ctk.CTkLabel(
             summarize_frame,
-            text="Step 7: Summarize the additional dataset by a selected column.\n• This creates a count of unique values in that column.",
+            text="Step 6: Summarize the additional dataset by a selected column.\n• This creates a count of unique values in that column.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -548,7 +548,7 @@ class DataJoinerApp:
         # Instructions
         instructions = ctk.CTkLabel(
             final_frame,
-            text="Step 8: Join the cleaned data with the summarized additional data.\n• This performs a left join, keeping all rows from your main dataset.",
+            text="Step 7: Join the cleaned data with the summarized additional data.\n• This performs a left join, keeping all rows from your main dataset.",
             font=ctk.CTkFont(size=12),
             justify="left"
         )
@@ -712,7 +712,7 @@ class DataJoinerApp:
         # Note about data processing
         note_label = ctk.CTkLabel(
             settings_frame,
-            text="Note: Make sure you have completed all previous steps (1-8) before exporting.",
+            text="Note: Make sure you have completed all previous steps before exporting.",
             font=ctk.CTkFont(size=12),
             text_color=Colors.WARNING_ORANGE
         )
@@ -726,27 +726,47 @@ class DataJoinerApp:
         export_buttons_frame = ctk.CTkFrame(export_frame)
         export_buttons_frame.pack(fill="x", pady=10)
         
-        export_excel_btn = ctk.CTkButton(
-            export_buttons_frame,
-            text="Export to Excel",
-            command=self.export_excel,
+        # Frame for pre-deduplication export
+        pre_dedup_frame = ctk.CTkFrame(export_buttons_frame)
+        pre_dedup_frame.pack(side="left", padx=20, pady=10, fill="x", expand=True)
+        ctk.CTkLabel(pre_dedup_frame, text="Export Before Deduplication (from Step 7)", font=ctk.CTkFont(weight="bold")).pack(pady=(5,10))
+        
+        export_excel_pre_btn = ctk.CTkButton(
+            pre_dedup_frame,
+            text="Export to Excel (with duplicates)",
+            command=lambda: self.export_excel(pre_deduplication=True),
             height=40,
             font=ctk.CTkFont(size=14, weight="bold"),
             fg_color=Colors.GO_GREEN,
             hover_color=Colors.GO_GREEN_HOVER
         )
-        export_excel_btn.pack(side="left", padx=10, pady=10)
+        export_excel_pre_btn.pack(side="left", padx=10, pady=10)
         
-        export_csv_btn = ctk.CTkButton(
+        # Frame for post-deduplication export
+        post_dedup_frame = ctk.CTkFrame(export_buttons_frame)
+        post_dedup_frame.pack(side="right", padx=20, pady=10, fill="x", expand=True)
+        ctk.CTkLabel(post_dedup_frame, text="Export After Deduplication (from Step 8)", font=ctk.CTkFont(weight="bold")).pack(pady=(5,10))
+
+        export_excel_post_btn = ctk.CTkButton(
+            post_dedup_frame,
+            text="Export to Excel (deduplicated)",
+            command=lambda: self.export_excel(pre_deduplication=False),
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=Colors.ACTION_BLUE,
+            hover_color=Colors.Go_GREEN_HOVER
+        )
+        export_excel_post_btn.pack(side="left", padx=10, pady=10)
+        
+        export_csv_post_btn = ctk.CTkButton(
             export_buttons_frame,
-            text="Export to CSV",
-            command=self.export_csv,
+            text="Export to CSV (deduplicated)",
+            command=lambda: self.export_csv(pre_deduplication=False),
             height=40,
             font=ctk.CTkFont(size=14, weight="bold"),
             fg_color=Colors.ACTION_BLUE,
             hover_color=Colors.ACTION_BLUE_HOVER
         )
-        export_csv_btn.pack(side="left", padx=10, pady=10)
         
     def load_dataset(self):
         file_paths = filedialog.askopenfilenames(
@@ -1101,14 +1121,22 @@ class DataJoinerApp:
                 except (TypeError, ValueError):
                     values.append("")
             self.tree.insert("", "end", values=values)
-    
-    def export_excel(self):
-        if self.final_data is None:
-            messagebox.showwarning("Warning", "Please complete the data processing workflow first!")
-            return
+
+    def export_excel(self, pre_deduplication=False):
+        if pre_deduplication:
+            data_to_export = self.joined_additional_data
+            if data_to_export is None:
+                messagebox.showwarning("Warning", "Please complete the workflow up to Step 7 (Left Join) first!")
+                return
+        else:
+            data_to_export = self.final_data
+            if data_to_export is None:
+                messagebox.showwarning("Warning", "Please complete the workflow up to Step 8 (Deduplication) first!")
+                return
         
         file_path = filedialog.asksaveasfilename(
             title="Save Excel File",
+            initialfile=f"export_{'with_duplicates' if pre_deduplication else 'deduplicated'}_{datetime.now().strftime('%Y%m%d')}.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
         )
@@ -1116,17 +1144,26 @@ class DataJoinerApp:
         if file_path:
             try:
                 self.final_data.to_excel(file_path, index=False)
+                data_to_export.to_excel(file_path, index=False)
                 messagebox.showinfo("Success", f"Data exported to {file_path}")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export: {str(e)}")
-    
-    def export_csv(self):
-        if self.final_data is None:
-            messagebox.showwarning("Warning", "Please complete the data processing workflow first!")
-            return
+
+    def export_csv(self, pre_deduplication=False):
+        if pre_deduplication:
+            data_to_export = self.joined_additional_data
+            if data_to_export is None:
+                messagebox.showwarning("Warning", "Please complete the workflow up to Step 7 (Left Join) first!")
+                return
+        else:
+            data_to_export = self.final_data
+            if data_to_export is None:
+                messagebox.showwarning("Warning", "Please complete the workflow up to Step 8 (Deduplication) first!")
+                return
         
         file_path = filedialog.asksaveasfilename(
             title="Save CSV File",
+            initialfile=f"export_{'with_duplicates' if pre_deduplication else 'deduplicated'}_{datetime.now().strftime('%Y%m%d')}.csv",
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -1134,6 +1171,7 @@ class DataJoinerApp:
         if file_path:
             try:
                 self.final_data.to_csv(file_path, index=False)
+                data_to_export.to_csv(file_path, index=False)
                 messagebox.showinfo("Success", f"Data exported to {file_path}")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export: {str(e)}")
@@ -1186,10 +1224,11 @@ class DataJoinerApp:
             self.datasets_joined = True
             # Ensure address selector updated
             column_list = list(self.combined_data.columns) if self.combined_data is not None else []
+            # Update column selector for the next step (Address Cleaning)
             try:
-                self.deduplicate_column_selector.configure(values=column_list)
+                self.address_column_selector.configure(values=column_list)
                 if column_list:
-                    self.deduplicate_column_selector.set(column_list[0])
+                    self.address_column_selector.set(column_list[0])
             except Exception:
                 pass # Ignore if widget doesn't exist yet
             
@@ -1206,17 +1245,17 @@ class DataJoinerApp:
     
     def deduplicate_by_date_action(self):
         """Groups by a column and keeps the most recent entry based on Year and Month."""
-        if not self.datasets_joined or self.combined_data is None:
-            messagebox.showwarning("Warning", "Please join datasets in Step 3 first.")
+        if not self.additional_join_done or self.joined_additional_data is None:
+            messagebox.showwarning("Warning", "Please complete the Left Join in Step 7 first.")
             return
 
         group_by_col = self.deduplicate_column_selector.get()
         if not group_by_col:
             messagebox.showwarning("Warning", "Please select a column to group by.")
             return
-
+        
         try:
-            df = self.combined_data.copy()
+            df = self.joined_additional_data.copy()
 
             # Map month names to numbers for sorting. 'NA' becomes 0 (oldest).
             month_map = {
@@ -1224,27 +1263,25 @@ class DataJoinerApp:
                 "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12,
                 "NA": 0
             }
-            df['Month_Num'] = df['Month'].map(month_map).fillna(0)
+            # Ensure 'Month' column exists before mapping
+            if 'Month' in df.columns:
+                df['Month_Num'] = df['Month'].map(month_map).fillna(0)
+            else:
+                messagebox.showerror("Error", "The 'Month' column is required for deduplication but was not found.")
+                return
 
             # Sort by Year and Month_Num descending to bring the most recent to the top of each group
             df_sorted = df.sort_values(by=['Year', 'Month_Num'], ascending=[False, False])
 
             # Drop duplicates on the selected column, keeping the first (most recent) entry
-            self.deduplicated_data = df_sorted.drop_duplicates(subset=[group_by_col], keep='first')
+            self.final_data = df_sorted.drop_duplicates(subset=[group_by_col], keep='first')
 
             # Clean up the temporary Month_Num column
-            self.deduplicated_data = self.deduplicated_data.drop(columns=['Month_Num'])
-            
+            self.final_data = self.final_data.drop(columns=['Month_Num'])
             self.data_deduplicated = True
 
             # Update UI
-            self.display_dataframe_in_tree(self.dedup_tree, self.deduplicated_data)
-            
-            # Update the column selector for the next step (Address Cleaning)
-            if self.deduplicated_data is not None:
-                self.address_column_selector.configure(values=list(self.deduplicated_data.columns))
-                if not self.deduplicated_data.columns.empty:
-                    self.address_column_selector.set(self.deduplicated_data.columns[0])
+            self.display_dataframe_in_tree(self.dedup_tree, self.final_data)
 
             messagebox.showinfo("Success", f"Deduplication complete. Kept the most recent record for each unique '{group_by_col}'.")
 
@@ -1327,8 +1364,8 @@ class DataJoinerApp:
 
     def clean_address_data(self):
         """Clean address data and create apartment indicator"""
-        if not self.data_deduplicated or self.deduplicated_data is None:
-            messagebox.showwarning("Warning", "Please deduplicate data in Step 4 first!")
+        if not self.datasets_joined or self.combined_data is None:
+            messagebox.showwarning("Warning", "Please join datasets in Step 3 first!")
             return
         
         address_column = self.address_column_selector.get()
@@ -1336,20 +1373,20 @@ class DataJoinerApp:
             messagebox.showwarning("Warning", "Please select an address column!")
             return
             
-        if not address_column in self.deduplicated_data.columns:
-            messagebox.showerror("Error", f"Column '{address_column}' not found in the deduplicated data!")
+        if not address_column in self.combined_data.columns:
+            messagebox.showerror("Error", f"Column '{address_column}' not found in the joined data!")
             return
         
-        if self.deduplicated_data.columns.empty or address_column not in self.deduplicated_data.columns:
+        if self.combined_data.columns.empty or address_column not in self.combined_data.columns:
             messagebox.showerror("Error", f"Column '{address_column}' not found in data!")
             return
             
         try:
             # Store original data before cleaning
-            self.pre_cleaned_data = self.deduplicated_data.copy()
+            self.pre_cleaned_data = self.combined_data.copy()
             
             # Create a copy of the combined data
-            self.cleaned_data = self.deduplicated_data.copy()
+            self.cleaned_data = self.combined_data.copy()
             
             print(f"Processing {len(self.cleaned_data)} rows from combined data...")  # Debug print
             
@@ -1534,27 +1571,33 @@ class DataJoinerApp:
         
         try:
             # Perform left join
-            self.final_data = self.cleaned_data.merge(
+            self.joined_additional_data = self.cleaned_data.merge(
                 self.summarized_additional_data,
                 left_on=cleaned_column,
                 right_on=additional_column,
                 how='left',
                 suffixes=('', '_additional')
             )
-            
-            # Display preview
-            self.display_dataframe_in_tree(self.final_tree, self.final_data)
             self.additional_join_done = True
+
+            # Display preview
+            self.display_dataframe_in_tree(self.final_tree, self.joined_additional_data)
+
+            # Update column selector for the next step (Deduplication)
+            if self.joined_additional_data is not None:
+                self.deduplicate_column_selector.configure(values=list(self.joined_additional_data.columns))
+                if not self.joined_additional_data.columns.empty:
+                    self.deduplicate_column_selector.set(self.joined_additional_data.columns[0])
             
-            messagebox.showinfo("Success", "Additional dataset joined successfully!")
+            messagebox.showinfo("Success", "Additional dataset joined successfully! You can now proceed to Step 8 to deduplicate.")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to join additional dataset: {str(e)}")
     
     def refresh_final_preview(self):
         """Refresh the final preview"""
-        if self.final_data is not None:
-            self.display_dataframe_in_tree(self.final_tree, self.final_data)
+        if self.joined_additional_data is not None:
+            self.display_dataframe_in_tree(self.final_tree, self.joined_additional_data)
         else:
             messagebox.showwarning("Warning", "No final data to preview!")
     
@@ -1568,7 +1611,7 @@ class DataJoinerApp:
     def summarize_additional_data_action(self):
         """Summarize the additional dataset by a selected column."""
         if self.additional_dataset is None:
-            messagebox.showwarning("Warning", "Please load an additional dataset in Step 6 first.")
+            messagebox.showwarning("Warning", "Please load an additional dataset in Step 5 first.")
             return
 
         summarize_col = self.summarize_column_selector.get()
@@ -1593,7 +1636,7 @@ class DataJoinerApp:
                 if not self.summarized_additional_data.columns.empty:
                     self.additional_join_column.set(self.summarized_additional_data.columns[0])
 
-            messagebox.showinfo("Success", f"Data summarized by '{summarize_col}'. You can now proceed to Step 8 to join this summary.")
+            messagebox.showinfo("Success", f"Data summarized by '{summarize_col}'. You can now proceed to Step 7 to join this summary.")
 
         except Exception as e:
             self.summarized_additional_data = None
