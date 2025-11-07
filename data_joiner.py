@@ -753,8 +753,8 @@ class DataJoinerApp:
             command=lambda: self.export_excel(pre_deduplication=False),
             height=40,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=Colors.ACTION_BLUE,
-            hover_color=Colors.Go_GREEN_HOVER
+            fg_color=Colors.GO_GREEN,
+            hover_color=Colors.GO_GREEN_HOVER
         )
         export_excel_post_btn.pack(side="left", padx=10, pady=10)
         
