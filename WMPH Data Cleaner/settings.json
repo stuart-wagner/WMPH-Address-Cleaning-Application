@@ -1,0 +1,29 @@
+{
+  "apartment_words": [
+    "APT",
+    "APARTMENT",
+    "UNIT",
+    "U",
+    "LOT",
+    "SUITE",
+    "STE",
+    "BLDG",
+    "BUILDING",
+    "FLOOR",
+    "FL",
+    "ROOM",
+    "RM"
+  ],
+  "po_box_words": [
+    "PO BOX",
+    "P.O. BOX",
+    "POBOX",
+    "P.O.BOX"
+  ],
+  "number_patterns": [
+    "\\d+$",
+    "#\\d+",
+    "\\d+[A-Z]?$"
+  ],
+  "case_sensitive": false
+}

@@ -3,11 +3,22 @@ import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
+import sys
 from datetime import datetime
 import json
 import re
 from default_settings import DefaultSettings
 from colors import Colors
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class DataJoinerApp:
     def __init__(self):
@@ -23,8 +34,7 @@ class DataJoinerApp:
 
         # Set window icon
         try:
-            # Assuming the icon file is named 'app_icon.ico' and is in the same directory
-            self.root.iconbitmap('wmph logo.ico')
+            self.root.iconbitmap(resource_path('wmph logo.ico'))
         except Exception as e:
             print(f"Warning: Could not load application icon. {e}")
         
